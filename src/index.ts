@@ -462,7 +462,7 @@ export class MicrosoftRewardsBot {
         log(this.isMobile, 'MAIN', '启动浏览器')
 
         // 登录 MS Rewards，然后可选择在受损时停止
-    await this.login.login(this.homePage, account.email, account.password, account.totp)
+        await this.login.login(this.homePage, account.email, account.password, account.totp)
 
         if (this.compromisedModeActive) {
             // 用户希望页面保持开启以进行手动恢复。不要继续执行任务。
@@ -491,8 +491,8 @@ export class MicrosoftRewardsBot {
 
         const data = await this.browser.func.getDashboardData()
 
-    this.pointsInitial = data.userStatus.availablePoints
-    const initial = this.pointsInitial
+        this.pointsInitial = data.userStatus.availablePoints
+        const initial = this.pointsInitial
 
         log(this.isMobile, 'MAIN-POINTS', `当前积分为: ${this.pointsInitial}`)
 
@@ -593,8 +593,8 @@ export class MicrosoftRewardsBot {
 
         await this.browser.func.goHome(this.homePage)
 
-    const data = await this.browser.func.getDashboardData()
-    const initialPoints = data.userStatus.availablePoints || this.pointsInitial || 0
+        const data = await this.browser.func.getDashboardData()
+        const initialPoints = data.userStatus.availablePoints || this.pointsInitial || 0
 
         const browserEnarablePoints = await this.browser.func.getBrowserEarnablePoints()
         const appEarnablePoints = await this.browser.func.getAppEarnablePoints(this.accessToken)
@@ -619,6 +619,7 @@ export class MicrosoftRewardsBot {
                 collectedPoints: 0
             }
         }
+
         // 执行每日签到
         if (this.config.workers.doDailyCheckIn) {
             await this.activities.doDailyCheckIn(this.accessToken, data)

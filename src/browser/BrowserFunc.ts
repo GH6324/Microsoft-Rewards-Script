@@ -29,7 +29,7 @@ export default class BrowserFunc {
             try {
                 await page.goto(this.bot.config.baseURL, {
                     waitUntil: 'domcontentloaded',
-                    timeout: 30000
+                    timeout: 90000
                 })
             } catch (e: any) {
                 if (typeof e?.message === 'string' && e.message.includes('ERR_ABORTED')) {
@@ -37,7 +37,7 @@ export default class BrowserFunc {
                     await this.bot.utils.wait(1500)
                     await page.goto(this.bot.config.baseURL, {
                         waitUntil: 'domcontentloaded',
-                        timeout: 30000
+                        timeout: 90000
                     })
                 } else {
                     throw e

@@ -46,7 +46,7 @@
         // "paths": {},                                 /* 一系列条目，用于将导入重新映射到相对于'baseUrl'的查找位置。 */
         // "rootDirs": [],                              /* 根文件夹列表，其组合内容表示运行时项目的结构。 */
         // "typeRoots": [],                             /* 包含类型定义的文件夹列表。 */
-        // "types": [],                                 /* 要包含在编译中的类型声明文件。 */
+        // "typeRoots": [],                                 /* 要包含在编译中的类型声明文件。 */
         // "allowSyntheticDefaultImports": true,        /* 允许从没有默认导出的模块进行默认导入。这不影响代码发射，只影响类型检查。 */
         "esModuleInterop": true, /* 通过为所有导入创建命名空间对象，启用CommonJS和ES模块之间的发射互操作性。隐含'allowSyntheticDefaultImports'。 */
         // "preserveSymlinks": true,                    /* 不解析符号链接的真实路径。 */
@@ -70,6 +70,8 @@
         "src/accounts.json",
         "src/config.json",
         "src/functions/queries.json"
+        "src/functions/bing-search-activity-queries.json",
+        "src/functions/search-queries.json"
     ],
     "exclude": [
         "node_modules"
