@@ -1,11 +1,11 @@
-import { BrowserContext, Cookie } from 'rebrowser-playwright'
-import { BrowserFingerprintWithHeaders } from 'fingerprint-generator'
+import type { Cookie } from 'patchright'
+import type { BrowserFingerprintWithHeaders } from 'fingerprint-generator'
 import fs from 'fs'
 import path from 'path'
 
-
-import { Account } from '../interface/Account'
-import { Config, ConfigSaveFingerprint } from '../interface/Config'
+import type { Account, ConfigSaveFingerprint } from '../interface/Account'
+import type { Config } from '../interface/Config'
+import { validateAccounts, validateConfig } from './Validator'
 
 let configCache: Config
 let configSourcePath = ''
@@ -135,51 +135,13 @@ export function loadAccounts(): Account[] {
             file = 'accounts.dev.json'
         }
 
-        // 2) Docker-friendly env overrides
-        const envJson = process.env.ACCOUNTS_JSON
-        const envFile = process.env.ACCOUNTS_FILE
+        const accountDir = path.join(__dirname, '../', file)
+        const accounts = fs.readFileSync(accountDir, 'utf-8')
+        const accountsData = JSON.parse(accounts)
 
-        let json: string | undefined
-        if (envJson && envJson.trim().startsWith('[')) {
-            json = envJson
-        } else if (envFile && envFile.trim()) {
-            const full = path.isAbsolute(envFile) ? envFile : path.join(process.cwd(), envFile)
-            if (!fs.existsSync(full)) {
-                throw new Error(`账户文件未找到: ${full}`)
-            }
-            json = fs.readFileSync(full, 'utf-8')
-        } else {
-            // Try multiple locations to support both root mounts and dist mounts
-            const candidates = [
-                path.join(__dirname, '../', file),
-                path.join(__dirname, '../src', file),
-                path.join(process.cwd(), file),
-                path.join(process.cwd(), 'src', file),
-                path.join(__dirname, file)
-            ]
-            let chosen: string | null = null
-            for (const p of candidates) {
-                try { if (fs.existsSync(p)) { chosen = p; break } } catch { /* ignore */ }
-            }
-            if (!chosen) throw new Error(`账户文件未找到: ${candidates.join(' | ')}`)
-            json = fs.readFileSync(chosen, 'utf-8')
-        }
+        validateAccounts(accountsData)
 
-        // Support comments in accounts file (same as config)
-        const parsedUnknown = JSON.parse(json)
-        // Accept either a root array or an object with an `accounts` array, ignore `_note`
-        const parsed = Array.isArray(parsedUnknown) ? parsedUnknown : (parsedUnknown && typeof parsedUnknown === 'object' && Array.isArray((parsedUnknown as { accounts?: unknown }).accounts) ? (parsedUnknown as { accounts: unknown[] }).accounts : null)
-        if (!Array.isArray(parsed)) throw new Error('账户文件必须是数组')
-        // 最小形状验证
-        for (const a of parsed) {
-            if (!a || typeof a.email !== 'string' || typeof a.password !== 'string') {
-                throw new Error('每个账户必须包含 email 和 password 字符串')
-            }
-        }
-        // 过滤掉禁用的账户 (enabled: false)
-        const allAccounts = parsed as Account[]
-        const enabledAccounts = allAccounts.filter(acc => acc.enabled !== false)
-        return enabledAccounts
+        return accountsData
     } catch (error) {
         throw new Error(error as string)
     }
@@ -220,16 +182,27 @@ export function loadConfig(): Config {
         configCache = normalized // Set as cache
         configSourcePath = cfgPath
 
-        return normalized
+        const configData = JSON.parse(config)
+        validateConfig(configData)
+
+        configCache = configData
+
+        return configData
     } catch (error) {
         throw new Error(error as string)
     }
 }
 
-export async function loadSessionData(sessionPath: string, email: string, isMobile: boolean, saveFingerprint: ConfigSaveFingerprint) {
+export async function loadSessionData(
+    sessionPath: string,
+    email: string,
+    saveFingerprint: ConfigSaveFingerprint,
+    isMobile: boolean
+) {
     try {
         // 获取cookie文件
-        const cookieFile = path.join(__dirname, '../browser/', sessionPath, email, `${isMobile ? 'mobile_cookies' : 'desktop_cookies'}.json`)
+        const cookiesFileName = isMobile ? 'session_mobile.json' : 'session_desktop.json'
+        const cookieFile = path.join(__dirname, '../browser/', sessionPath, email, cookiesFileName)
 
         let cookies: Cookie[] = []
         if (fs.existsSync(cookieFile)) {
@@ -237,45 +210,40 @@ export async function loadSessionData(sessionPath: string, email: string, isMobi
             cookies = JSON.parse(cookiesData)
         }
 
-        // 获取指纹文件（支持旧版拼写错误"fingerpint"和正确的"fingerprint"）
-        const baseDir = path.join(__dirname, '../browser/', sessionPath, email)
-        const legacyFile = path.join(baseDir, `${isMobile ? 'mobile_fingerpint' : 'desktop_fingerpint'}.json`)
-        const correctFile = path.join(baseDir, `${isMobile ? 'mobile_fingerprint' : 'desktop_fingerprint'}.json`)
+        const fingerprintFileName = isMobile ? 'session_fingerprint_mobile.json' : 'session_fingerprint_desktop.json'
+        const fingerprintFile = path.join(__dirname, '../browser/', sessionPath, email, fingerprintFileName)
 
         let fingerprint!: BrowserFingerprintWithHeaders
-        const shouldLoad = (saveFingerprint.desktop && !isMobile) || (saveFingerprint.mobile && isMobile)
-        if (shouldLoad) {
-            const chosen = fs.existsSync(correctFile) ? correctFile : (fs.existsSync(legacyFile) ? legacyFile : '')
-            if (chosen) {
-                const fingerprintData = await fs.promises.readFile(chosen, 'utf-8')
-                fingerprint = JSON.parse(fingerprintData)
-            }
+        const shouldLoadFingerprint = isMobile ? saveFingerprint.mobile : saveFingerprint.desktop
+        if (shouldLoadFingerprint && fs.existsSync(fingerprintFile)) {
+            const fingerprintData = await fs.promises.readFile(fingerprintFile, 'utf-8')
+            fingerprint = JSON.parse(fingerprintData)
         }
 
         return {
             cookies: cookies,
             fingerprint: fingerprint
         }
-
     } catch (error) {
         throw new Error(error as string)
     }
 }
 
-export async function saveSessionData(sessionPath: string, browser: BrowserContext, email: string, isMobile: boolean): Promise<string> {
+export async function saveSessionData(
+    sessionPath: string,
+    cookies: Cookie[],
+    email: string,
+    isMobile: boolean
+): Promise<string> {
     try {
-        const cookies = await browser.cookies()
-
-        // Fetch path
         const sessionDir = path.join(__dirname, '../browser/', sessionPath, email)
+        const cookiesFileName = isMobile ? 'session_mobile.json' : 'session_desktop.json'
 
-        // Create session dir
         if (!fs.existsSync(sessionDir)) {
             await fs.promises.mkdir(sessionDir, { recursive: true })
         }
 
-        // Save cookies to a file
-        await fs.promises.writeFile(path.join(sessionDir, `${isMobile ? 'mobile_cookies' : 'desktop_cookies'}.json`), JSON.stringify(cookies))
+        await fs.promises.writeFile(path.join(sessionDir, cookiesFileName), JSON.stringify(cookies))
 
         return sessionDir
     } catch (error) {
@@ -283,22 +251,21 @@ export async function saveSessionData(sessionPath: string, browser: BrowserConte
     }
 }
 
-export async function saveFingerprintData(sessionPath: string, email: string, isMobile: boolean, fingerprint: BrowserFingerprintWithHeaders): Promise<string> {
+export async function saveFingerprintData(
+    sessionPath: string,
+    email: string,
+    isMobile: boolean,
+    fingerpint: BrowserFingerprintWithHeaders
+): Promise<string> {
     try {
-        // Fetch path
         const sessionDir = path.join(__dirname, '../browser/', sessionPath, email)
+        const fingerprintFileName = isMobile ? 'session_fingerprint_mobile.json' : 'session_fingerprint_desktop.json'
 
-        // Create session dir
         if (!fs.existsSync(sessionDir)) {
             await fs.promises.mkdir(sessionDir, { recursive: true })
         }
 
-        // 将指纹保存到文件（为兼容性写入旧版和更正的名称）
-        const legacy = path.join(sessionDir, `${isMobile ? 'mobile_fingerpint' : 'desktop_fingerpint'}.json`)
-        const correct = path.join(sessionDir, `${isMobile ? 'mobile_fingerprint' : 'desktop_fingerprint'}.json`)
-        const payload = JSON.stringify(fingerprint)
-        await fs.promises.writeFile(correct, payload)
-        try { await fs.promises.writeFile(legacy, payload) } catch { /* ignore */ }
+        await fs.promises.writeFile(path.join(sessionDir, fingerprintFileName), JSON.stringify(fingerpint))
 
         return sessionDir
     } catch (error) {

@@ -1,38 +1,21 @@
 export interface Config {
-    baseURL: string;
-    sessionPath: string;
-    headless: boolean;
-    browser?: ConfigBrowser; // Optional nested browser config
-    fingerprinting?: ConfigFingerprinting; // Optional nested fingerprinting config
-    parallel: boolean;
-    runOnZeroPoints: boolean;
-    clusters: number;
-    saveFingerprint: ConfigSaveFingerprint;
-    workers: ConfigWorkers;
-    searchOnBingLocalQueries: boolean;
-    globalTimeout: number | string;
-    searchSettings: ConfigSearchSettings;
-    humanization?: ConfigHumanization; // Anti-ban humanization controls
-    retryPolicy?: ConfigRetryPolicy; // Global retry/backoff policy
-    jobState?: ConfigJobState; // Persistence of per-activity checkpoints
-    logExcludeFunc: string[];
-    webhookLogExcludeFunc: string[];
-    logging?: ConfigLogging; // Preserve original logging object (for live webhook settings)
-    proxy: ConfigProxy;
-    webhook: ConfigWebhook;
-    conclusionWebhook?: ConfigWebhook; // Optional secondary webhook for final summary
-    ntfy: ConfigNtfy;
-    vacation?: ConfigVacation; // Optional monthly contiguous off-days
-    crashRecovery?: ConfigCrashRecovery; // Automatic restart / graceful shutdown
-    riskManagement?: ConfigRiskManagement; // NEW: Risk-aware throttling and ban prediction
-    dryRun?: boolean; // NEW: Dry-run mode (simulate without executing)
-    queryDiversity?: ConfigQueryDiversity; // NEW: Multi-source query generation
+    baseURL: string
+    sessionPath: string
+    headless: boolean
+    runOnZeroPoints: boolean
+    clusters: number
+    errorDiagnostics: boolean
+    workers: ConfigWorkers
+    searchOnBingLocalQueries: boolean
+    globalTimeout: number | string
+    searchSettings: ConfigSearchSettings
+    debugLogs: boolean
+    proxy: ConfigProxy
+    consoleLogFilter: LogFilter
+    webhook: ConfigWebhook
 }
 
-export interface ConfigSaveFingerprint {
-    mobile: boolean;
-    desktop: boolean;
-}
+export type QueryEngine = 'google' | 'wikipedia' | 'reddit' | 'local'
 
 export interface ConfigBrowser {
     headless?: boolean;
@@ -44,38 +27,22 @@ export interface ConfigFingerprinting {
 }
 
 export interface ConfigSearchSettings {
-    useGeoLocaleQueries: boolean;
-    scrollRandomResults: boolean;
-    clickRandomResults: boolean;
-    useLocale: string;
-    searchDelay: ConfigSearchDelay;
-    retryMobileSearchAmount: number;
-    localFallbackCount?: number; // Number of local fallback queries to sample when trends fail
-    extraFallbackRetries?: number; // Additional mini-retry loops with fallback terms
+    scrollRandomResults: boolean
+    clickRandomResults: boolean
+    parallelSearching: boolean
+    queryEngines: QueryEngine[]
+    searchResultVisitTime: number | string
+    searchDelay: ConfigDelay
+    readDelay: ConfigDelay
 }
 
-export interface ConfigSearchDelay {
-    min: number | string;
-    max: number | string;
-}
-
-export interface ConfigWebhook {
-    enabled: boolean;
-    url: string;
-    username?: string; // Custom webhook username (default: "Microsoft Rewards")
-    avatarUrl?: string; // Custom webhook avatar URL
-}
-
-export interface ConfigNtfy {
-    enabled: boolean;
-    url: string;
-    topic: string;
-    authToken?: string; // Optional authentication token
+export interface ConfigDelay {
+    min: number | string
+    max: number | string
 }
 
 export interface ConfigProxy {
-    proxyGoogleTrends: boolean;
-    proxyBingTerms: boolean;
+    queryEngine: boolean
 }
 
 export interface ConfigVacation {
@@ -93,14 +60,45 @@ export interface ConfigCrashRecovery {
 }
 
 export interface ConfigWorkers {
-    doDailySet: boolean;
-    doMorePromotions: boolean;
-    doPunchCards: boolean;
-    doDesktopSearch: boolean;
-    doMobileSearch: boolean;
-    doDailyCheckIn: boolean;
-    doReadToEarn: boolean;
-    bundleDailySetWithSearch?: boolean; // If true, run desktop search right after Daily Set
+    doDailySet: boolean
+    doSpecialPromotions: boolean
+    doMorePromotions: boolean
+    doPunchCards: boolean
+    doAppPromotions: boolean
+    doDesktopSearch: boolean
+    doMobileSearch: boolean
+    doDailyCheckIn: boolean
+    doReadToEarn: boolean
+}
+
+// Webhooks
+export interface ConfigWebhook {
+    discord?: WebhookDiscordConfig
+    ntfy?: WebhookNtfyConfig
+    webhookLogFilter: LogFilter
+}
+
+export interface LogFilter {
+    enabled: boolean
+    mode: 'whitelist' | 'blacklist'
+    levels?: Array<'debug' | 'info' | 'warn' | 'error'>
+    keywords?: string[]
+    regexPatterns?: string[]
+}
+
+export interface WebhookDiscordConfig {
+    enabled: boolean
+    url: string
+}
+
+export interface WebhookNtfyConfig {
+    enabled?: boolean
+    url: string
+    topic?: string
+    token?: string
+    title?: string
+    tags?: string[]
+    priority?: 1 | 2 | 3 | 4 | 5 // 5 highest (important)
 }
 
 // Anti-ban humanization

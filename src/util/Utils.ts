@@ -1,30 +1,19 @@
-import ms from 'ms'
+import ms, { StringValue } from 'ms'
 
 export default class Util {
-
-    async wait(ms: number): Promise<void> {
-        // 安全检查：防止过长或负数等待
-        const MAX_WAIT_MS = 3600000 // 最大1小时
-        const safeMs = Math.min(Math.max(0, ms), MAX_WAIT_MS)
-        
-        if (ms !== safeMs) {
-            console.warn(`[Utils] wait() 从 ${ms}ms 限制到 ${safeMs}ms (最大: ${MAX_WAIT_MS}ms)`)
+    async wait(time: number | string): Promise<void> {
+        if (typeof time === 'string') {
+            time = this.stringToNumber(time)
         }
-        
-        return new Promise<void>((resolve) => {
-            setTimeout(resolve, safeMs)
-        })
-    }
 
-    async waitRandom(min_ms: number, max_ms: number, distribution: 'uniform' | 'normal' = 'uniform'): Promise<void> {
-        return new Promise<void>((resolve) => {
-            setTimeout(resolve, this.randomNumber(min_ms, max_ms, distribution))
+        return new Promise<void>(resolve => {
+            setTimeout(resolve, time)
         })
     }
 
     getFormattedDate(ms = Date.now()): string {
         const today = new Date(ms)
-        const month = String(today.getMonth() + 1).padStart(2, '0')  // 一月是0
+        const month = String(today.getMonth() + 1).padStart(2, '0') //  一月是0
         const day = String(today.getDate()).padStart(2, '0')
         const year = today.getFullYear()
 
@@ -32,9 +21,19 @@ export default class Util {
     }
 
     shuffleArray<T>(array: T[]): T[] {
-        return array.map(value => ({ value, sort: Math.random() }))
-            .sort((a, b) => a.sort - b.sort)
-            .map(({ value }) => value)
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1))
+
+            const a = array[i]
+            const b = array[j]
+
+            if (a === undefined || b === undefined) continue
+
+            array[i] = b
+            array[j] = a
+        }
+
+        return array
     }
 
     randomNumber(min: number, max: number, distribution: 'uniform' | 'normal' = 'uniform'): number {
@@ -73,12 +72,39 @@ export default class Util {
         return chunks
     }
 
-    stringToMs(input: string | number): number {
-        const milisec = ms(input.toString())
-        if (!milisec) {
-            throw new Error('提供的字符串无法解析为有效时间！请使用类似"1 min"、"1m"或"1 minutes"的格式')
+    stringToNumber(input: string | number): number {
+        if (typeof input === 'number') {
+            return input
         }
+        const value = input.trim()
+
+        const milisec = ms(value as StringValue)
+
+        if (milisec === undefined) {
+            throw new Error(
+                `The input provided (${input}) cannot be parsed to a valid time! Use a format like "1 min", "1m" or "1 minutes"`
+            )
+        }
+
         return milisec
     }
 
+    normalizeString(string: string): string {
+        return string
+            .normalize('NFD')
+            .trim()
+            .toLowerCase()
+            .replace(/[^\x20-\x7E]/g, '')
+            .replace(/[?!]/g, '')
+    }
+
+    getEmailUsername(email: string): string {
+        return email.split('@')[0] ?? 'Unknown'
+    }
+
+    randomDelay(min: string | number, max: string | number): number {
+        const minMs = typeof min === 'number' ? min : this.stringToNumber(min)
+        const maxMs = typeof max === 'number' ? max : this.stringToNumber(max)
+        return Math.floor(this.randomNumber(minMs, maxMs))
+    }
 }

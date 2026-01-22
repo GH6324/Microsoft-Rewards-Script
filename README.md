@@ -53,63 +53,41 @@ docker compose up -d
 |----------|-------------|----------|
 | `baseURL` | Microsoft Rewards base URL | `https://rewards.bing.com` |
 | `sessionPath` | 用于存储浏览器会话的文件夹 | `sessions` |
+| `headless` | 在后台运行浏览器 | `false`（可见） |
 | `dryRun` | 模拟执行而不运行任务 | `false` |
+| `parallel` | 同时运行移动/桌面任务 | `true` |
+| `runOnZeroPoints` | 在没有可用积分时继续 | `false` |
+| `clusters` | 并发账户实例数 | `1` |
 
-### Browser / 浏览器
-| 设置 | 描述 | 默认值 |
-|----------|-------------|----------|
-| `browser.headless` | 无头模式运行浏览器 | `false` |
-| `browser.globalTimeout` | 操作超时时间 | `"30s"` |
 
 ### Fingerprinting / 指纹识别
 | 设置 | 描述 | 默认值 |
-|----------|-------------|----------|
-| `fingerprinting.saveFingerprint.mobile` | 重用移动设备指纹 | `true` |
-| `fingerprinting.saveFingerprint.desktop` | 重用桌面设备指纹 | `true` |
+|---------|-------------|---------|
+| `saveFingerprint.mobile` | 重用移动浏览器指纹 | `false` |
+| `saveFingerprint.desktop` | 重用桌面浏览器指纹 | `false` |
 
-### Execution / 执行
-| 设置 | 描述 | 默认值 |
-|----------|-------------|----------|
-| `execution.parallel` | 同时运行桌面和移动版本 | `false` |
-| `execution.runOnZeroPoints` | 即使积分为零也运行 | `false` |
-| `execution.clusters` | 并发账户集群数量 | `1` |
 
 ### Job State / 任务状态
 | 设置 | 描述 | 默认值 |
-|----------|-------------|----------|
-| `jobState.enabled` | 保存上一个任务状态 | `true` |
-| `jobState.dir` | 任务数据目录 | `""` |
-
-### Workers (Tasks) / 工作器（任务）
-| 设置 | 描述 | 默认值 |
-|----------|-------------|----------|
-| `doDailySet` | 完成每日集 | `true` |
-| `doMorePromotions` | 完成更多推广 | `true` |
-| `doPunchCards` | 完成打卡 | `true` |
-| `doDesktopSearch` | 执行桌面搜索 | `true` |
-| `doMobileSearch` | 执行移动搜索 | `true` |
-| `doDailyCheckIn` | 完成每日签到 | `true` |
-| `doReadToEarn` | 完成阅读赚钱 | `true` |
-| `bundleDailySetWithSearch` | 组合每日集和搜索 | `true` |
+|---------|-------------|---------|
+| `workers.doDailySet` | 完成每日集活动 | `true` |
+| `workers.doMorePromotions` | 完成促销优惠 | `true` |
+| `workers.doPunchCards` | 完成打卡活动 | `true` |
+| `workers.doDesktopSearch` | 执行桌面搜索 | `true` |
+| `workers.doMobileSearch` | 执行移动搜索 | `true` |
+| `workers.doDailyCheckIn` | 完成每日签到 | `true` |
+| `workers.doReadToEarn` | 完成阅读赚取活动 | `true` |
 
 ### Search / 搜索
 | 设置 | 描述 | 默认值 |
-|----------|-------------|----------|
-| `search.useLocalQueries` | 使用本地查询列表 | `true` |
-| `search.settings.useGeoLocaleQueries` | 使用基于地区的查询 | `true` |
-| `search.settings.scrollRandomResults` | 随机滚动 | `true` |
-| `search.settings.clickRandomResults` | 随机点击链接 | `true` |
-| `search.settings.retryMobileSearchAmount` | 重试移动搜索次数 | `2` |
-| `search.settings.delay.min` | 搜索间的最小延迟 | `1min` |
-| `search.settings.delay.max` | 搜索间最大延迟 | `5min` |
+|---------|-------------|---------|
+| `searchOnBingLocalQueries` | 使用本地查询 vs. 获取的查询 | `false` |
+| `searchSettings.useGeoLocaleQueries` | 生成基于位置的查询 | `false` |
+| `searchSettings.scrollRandomResults` | 随机滚动搜索结果 | `true` |
+| `searchSettings.clickRandomResults` | 点击随机结果链接 | `true` |
+| `searchSettings.searchDelay` | 搜索之间的延迟（最小/最大） | `3-5 分钟` |
+| `searchSettings.retryMobileSearchAmount` | 移动搜索重试次数 | `2` |
 
-### Query Diversity / 查询多样性
-| 设置 | 描述 | 默认值 |
-|----------|-------------|----------|
-| `queryDiversity.enabled` | 启用多个查询源 | `true` |
-| `queryDiversity.sources` | 查询提供者 | `["google-trends", "reddit", "local-fallback"]` |
-| `queryDiversity.maxQueriesPerSource` | 每个源的限制 | `10` |
-| `queryDiversity.cacheMinutes` | 缓存生命周期 | `30` |
 
 ### Humanization / 人性化
 | 设置 | 描述 | 默认值 |
@@ -122,85 +100,62 @@ docker compose up -d
 | `gestureMoveProb` | 随机鼠标移动几率 | `0.65` |
 | `gestureScrollProb` | 随机滚动几率 | `0.4` |
 
-### Vacation Mode / 假期模式
+### 高级设置
 | 设置 | 描述 | 默认值 |
-|----------|-------------|----------|
-| `vacation.enabled` | 启用随机暂停 | `true` |
-| `minDays` | 最短休息天数 | `2` |
-| `maxDays` | 最长休息天数 | `4` |
+|---------|-------------|---------|
+| `globalTimeout` | 操作超时持续时间 | `30s` |
+| `logExcludeFunc` | 从日志中排除的函数 | `SEARCH-CLOSE-TABS` |
+| `webhookLogExcludeFunc` | 从 webhooks 中排除的函数 | `SEARCH-CLOSE-TABS` |
+| `proxy.proxyGoogleTrends` | 代理 Google Trends 请求 | `true` |
+| `proxy.proxyBingTerms` | 代理 Bing Terms 请求 | `true` |
 
-### Risk Management / 风险管理
+### Webhook 设置
 | 设置 | 描述 | 默认值 |
-|----------|-------------|----------|
-| `enabled` | 启用基于风险的调整 | `true` |
-| `autoAdjustDelays` | 动态适应延迟 | `true` |
-| `stopOnCritical` | 遇到严重警告时停止 | `false` |
-| `banPrediction` | 基于信号预测封禁 | `true` |
-| `riskThreshold` | 风险承受水平 | `75` |
+|---------|-------------|---------|
+| `webhook.enabled` | 启用 Discord 通知 | `false` |
+| `webhook.url` | Discord webhook URL | `null` |
+| `conclusionWebhook.enabled` | 启用仅摘要 webhook | `false` |
+| `conclusionWebhook.url` | 摘要 webhook URL | `null` |
 
-### Retry Policy / 重试策略
-| 设置 | 描述 | 默认值 |
-|----------|-------------|----------|
-| `maxAttempts` | 最大重试次数 | `3` |
-| `baseDelay` | 初始重试延迟 | `1000` |
-| `maxDelay` | 最大重试延迟 | `30s` |
-| `multiplier` | 退避倍数 | `2` |
-| `jitter` | 随机抖动因子 | `0.2` |
 
-### Proxy / 代理
-| 设置 | 描述 | 默认值 |
-|----------|-------------|----------|
-| `proxy.proxyGoogleTrends` | 为Google Trends请求使用代理 | `true` |
-| `proxy.proxyBingTerms` | 为Bing条款请求使用代理 | `true` |
+## ✨ 功能
 
-### Notifications / 通知
-| 设置 | 描述 | 默认值 |
-|----------|-------------|----------|
-| `notifications.webhook.enabled` | 启用Discord Webhook | `false` |
-| `notifications.webhook.url` | Discord Webhook URL | `""` |
-| `notifications.conclusionWebhook.enabled` | 启用总结Webhook | `false` |
-| `notifications.conclusionWebhook.url` | 总结Webhook URL | `""` |
-| `notifications.ntfy.enabled` | 启用Ntfy推送提醒 | `false` |
-| `notifications.ntfy.url` | Ntfy服务器URL | `""` |
-| `notifications.ntfy.topic` | Ntfy主题名称 | `"rewards"` |
+**账户管理：**
+- ✅ 多账户支持
+- ✅ 会话存储与持久化
+- ✅ 2FA 支持
+- ✅ 无密码登录支持
 
-### Logging / 日志
-| 设置 | 描述 | 默认值 |
-|----------|-------------|----------|
-| `excludeFunc` | 从控制台日志中排除 | `["SEARCH-CLOSE-TABS", "LOGIN-NO-PROMPT", "FLOW"]` |
-| `webhookExcludeFunc` | 从Webhook日志中排除 | `["SEARCH-CLOSE-TABS", "LOGIN-NO-PROMPT", "FLOW"]` |
-| `redactEmails` | 在日志中隐藏邮箱 | `true` |
----
-## 功能 ##
-- [x] 多账户支持
-- [x] 会话存储
-- [x] 双因素认证支持
-- [x] 无密码登录支持
-- [x] 无头模式支持
-- [x] Discord Webhook 支持
-- [x] 最终摘要 Webhook（专用，可选）
-- [x] 桌面搜索
-- [x] 可配置任务
-- [x] 微软 Edge 搜索
-- [x] 移动设备搜索
-- [x] 模拟滚动支持
-- [x] 模拟链接点击支持
-- [x] 地理位置搜索查询
-- [x] 完成每日任务集
-- [x] 完成更多活动任务
-- [x] 解决 10 积分的测验
-- [x] 解决 30 - 40 积分的测验
-- [x] 完成点击奖励任务
-- [x] 完成投票任务
-- [x] 完成打卡任务
-- [x] 解决随机的“这个还是那个”测验
-- [x] 解决 ABC 测验
-- [x] 完成每日签到
-- [x] 完成阅读赚取积分任务
-- [x] 集群支持
-- [x] 代理支持
-- [x] Docker 支持（实验性）
-- [x] 自动调度（通过 Docker）
+**自动化与控制：**
+- ✅ 无头浏览器操作
+- ✅ 集群支持（同时多个账户）
+- ✅ 可配置任务选择
+- ✅ 代理支持
+- ✅ 自动调度（Docker）
+
+**搜索与活动：**
+- ✅ 桌面与移动搜索
+- ✅ Microsoft Edge 搜索模拟
+- ✅ 地理定位搜索查询
+- ✅ 模拟滚动与链接点击
+- ✅ 每日集完成
+- ✅ 促销活动
+- ✅ 打卡完成
+- ✅ 每日签到
+- ✅ 阅读赚取活动
+
+**测验与互动内容：**
+- ✅ 测验解答（10 分与 30-40 分变体）
+- ✅ 此或彼测验（随机答案）
+- ✅ ABC 测验解答
+- ✅ 投票完成
+- ✅ 点击奖励
+
+**通知与监控：**
+- ✅ Discord Webhook 集成
+- ✅ 专用摘要 Webhook
+- ✅ 全面日志记录
+- ✅ Docker 支持与监控
 
 
 ## 更新日志 ##
@@ -212,8 +167,10 @@ docker compose up -d
 6. 由于pnpm依赖导致无法编译问题，项目暂时改回使用npm管理-2025年11月11日
 7. 补充docker的运行方式-2025年11月11日
 
-## 免责声明 ##
-使用此脚本可能会导致你的账户被封禁或暂停，请注意！
-<br /> 
-请自行承担使用此脚本的风险！
+## ⚠️ 免责声明
+
+**风险自负！** 使用自动化脚本时，您的 Microsoft Rewards 账户可能会被暂停或禁止。
+
+此脚本仅供教育目的。作者对 Microsoft 采取的任何账户操作不承担责任。
+
 

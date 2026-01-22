@@ -69,11 +69,9 @@
         "src/**/*.d.ts",
         "src/accounts.json",
         "src/config.json",
-        "src/functions/queries.json"
+        "src/functions/queries.json",
         "src/functions/bing-search-activity-queries.json",
         "src/functions/search-queries.json"
     ],
-    "exclude": [
-        "node_modules"
-    ]
+    "exclude": ["node_modules"]
 }

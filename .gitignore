@@ -1,9 +1,12 @@
 sessions/
 dist/
+.dev/
 node_modules/
-package-lock.json
-accounts.json
-notes
+src/accounts.json
+src/config.json
+/.vscode
+/diagnostics
+note
 accounts.dev.json
 accounts.main.json
 .DS_Store
@@ -19,3 +22,6 @@ accounts.dev.json
 .DS_Store
 .playwright-chromium-installed
 QWEN.md
+bun.lock
+logs/
+.stfolder/
