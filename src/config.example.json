@@ -17,20 +17,20 @@
         "doReadToEarn": true
     },
     "searchOnBingLocalQueries": false,
-    "globalTimeout": "30sec",
+    "globalTimeout": "50sec",
     "searchSettings": {
-        "scrollRandomResults": false,
-        "clickRandomResults": false,
-        "parallelSearching": true,
-        "queryEngines": ["google", "wikipedia", "reddit", "local"],
-        "searchResultVisitTime": "10sec",
+        "scrollRandomResults": true,
+        "clickRandomResults": true,
+        "parallelSearching": false,
+        "queryEngines": ["china", "local"],
+        "searchResultVisitTime": "20sec",
         "searchDelay": {
-            "min": "30sec",
-            "max": "1min"
+            "min": "5min",
+            "max": "9min"
         },
         "readDelay": {
-            "min": "30sec",
-            "max": "1min"
+            "min": "6min",
+            "max": "11min"
         }
     },
     "debugLogs": false,
@@ -42,7 +42,7 @@
         "regexPatterns": []
     },
     "proxy": {
-        "queryEngine": true
+        "queryEngine": false
     },
     "webhook": {
         "discord": {

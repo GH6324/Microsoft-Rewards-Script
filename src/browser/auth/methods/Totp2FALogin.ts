@@ -50,16 +50,16 @@ export class TotpLogin {
 
     async handle(page: Page, totpSecret?: string): Promise<void> {
         try {
-            this.bot.logger.info(this.bot.isMobile, 'LOGIN-TOTP', 'TOTP 2FA authentication requested')
+            this.bot.logger.info(this.bot.isMobile, 'LOGIN-TOTP', '请求TOTP双因素身份验证')
 
             if (totpSecret) {
                 const code = this.generateTotpCode(totpSecret)
-                this.bot.logger.info(this.bot.isMobile, 'LOGIN-TOTP', 'Generated TOTP code from secret')
+                this.bot.logger.info(this.bot.isMobile, 'LOGIN-TOTP', '从密钥生成TOTP代码')
 
                 const filled = await this.fillCode(page, code)
                 if (!filled) {
-                    this.bot.logger.error(this.bot.isMobile, 'LOGIN-TOTP', 'Unable to fill TOTP input field')
-                    throw new Error('TOTP input field not found')
+                    this.bot.logger.error(this.bot.isMobile, 'LOGIN-TOTP', '无法填写TOTP输入字段')
+                    throw new Error('未找到TOTP输入字段')
                 }
 
                 await this.bot.utils.wait(500)
@@ -68,19 +68,19 @@ export class TotpLogin {
 
                 const errorMessage = await getErrorMessage(page)
                 if (errorMessage) {
-                    this.bot.logger.error(this.bot.isMobile, 'LOGIN-TOTP', `TOTP failed: ${errorMessage}`)
-                    throw new Error(`TOTP authentication failed: ${errorMessage}`)
+                    this.bot.logger.error(this.bot.isMobile, 'LOGIN-TOTP', `TOTP失败: ${errorMessage}`)
+                    throw new Error(`TOTP身份验证失败: ${errorMessage}`)
                 }
 
-                this.bot.logger.info(this.bot.isMobile, 'LOGIN-TOTP', 'TOTP authentication completed successfully')
+                this.bot.logger.info(this.bot.isMobile, 'LOGIN-TOTP', 'TOTP身份验证成功完成')
                 return
             }
 
-            this.bot.logger.info(this.bot.isMobile, 'LOGIN-TOTP', 'No TOTP secret provided, awaiting manual input')
+            this.bot.logger.info(this.bot.isMobile, 'LOGIN-TOTP', '未提供TOTP密钥，等待手动输入')
 
             for (let attempt = 1; attempt <= this.maxManualAttempts; attempt++) {
                 const code = await promptInput({
-                    question: `Enter the 6-digit TOTP code (waiting ${this.maxManualSeconds}s): `,
+                    question: `输入6位TOTP代码 (等待 ${this.maxManualSeconds}秒): `,
                     timeoutSeconds: this.maxManualSeconds,
                     validate: code => /^\d{6}$/.test(code)
                 })
@@ -89,11 +89,11 @@ export class TotpLogin {
                     this.bot.logger.warn(
                         this.bot.isMobile,
                         'LOGIN-TOTP',
-                        `Invalid or missing code (attempt ${attempt}/${this.maxManualAttempts}) | input length=${code?.length}`
+                        `无效或缺少代码 (尝试 ${attempt}/${this.maxManualAttempts}) | 输入长度=${code?.length}`
                     )
 
                     if (attempt === this.maxManualAttempts) {
-                        throw new Error('Manual TOTP input failed or timed out')
+                        throw new Error('手动TOTP输入失败或超时')
                     }
                     continue
                 }
@@ -103,11 +103,11 @@ export class TotpLogin {
                     this.bot.logger.error(
                         this.bot.isMobile,
                         'LOGIN-TOTP',
-                        `Unable to fill TOTP input (attempt ${attempt}/${this.maxManualAttempts})`
+                        `无法填写TOTP输入 (尝试 ${attempt}/${this.maxManualAttempts})`
                     )
 
                     if (attempt === this.maxManualAttempts) {
-                        throw new Error('TOTP input field not found')
+                        throw new Error('未找到TOTP输入字段')
                     }
                     continue
                 }
@@ -116,31 +116,31 @@ export class TotpLogin {
                 await this.bot.browser.utils.ghostClick(page, this.submitButtonSelector)
                 await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {})
 
-                // Check if wrong code was entered
+                // 检查是否输入了错误代码
                 const errorMessage = await getErrorMessage(page)
                 if (errorMessage) {
                     this.bot.logger.warn(
                         this.bot.isMobile,
                         'LOGIN-TOTP',
-                        `Incorrect code: ${errorMessage} (attempt ${attempt}/${this.maxManualAttempts})`
+                        `代码不正确: ${errorMessage} (尝试 ${attempt}/${this.maxManualAttempts})`
                     )
 
                     if (attempt === this.maxManualAttempts) {
-                        throw new Error(`Maximum attempts reached: ${errorMessage}`)
+                        throw new Error(`达到最大尝试次数: ${errorMessage}`)
                     }
                     continue
                 }
 
-                this.bot.logger.info(this.bot.isMobile, 'LOGIN-TOTP', 'TOTP authentication completed successfully')
+                this.bot.logger.info(this.bot.isMobile, 'LOGIN-TOTP', 'TOTP身份验证成功完成')
                 return
             }
 
-            throw new Error(`TOTP input failed after ${this.maxManualAttempts} attempts`)
+            throw new Error(`TOTP输入在 ${this.maxManualAttempts} 次尝试后失败`)
         } catch (error) {
             this.bot.logger.error(
                 this.bot.isMobile,
                 'LOGIN-TOTP',
-                `Error occurred: ${error instanceof Error ? error.message : String(error)}`
+                `发生错误: ${error instanceof Error ? error.message : String(error)}`
             )
             throw error
         }

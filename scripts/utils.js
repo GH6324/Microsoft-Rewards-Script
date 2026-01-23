@@ -15,7 +15,7 @@ export function getProjectRoot(currentDir) {
         }
         dir = path.dirname(dir)
     }
-    throw new Error('Could not find project root (package.json not found)')
+    throw new Error('找不到项目根目录 (未找到 package.json)')
 }
 
 export function log(level, ...args) {
@@ -45,21 +45,21 @@ export function parseArgs(argv = process.argv.slice(2)) {
 
 export function validateEmail(email) {
     if (!email) {
-        log('ERROR', 'Missing -email argument')
-        log('ERROR', 'Usage: node script.js -email you@example.com')
+        log('ERROR', '缺少 -email 参数')
+        log('ERROR', '用法: node script.js -email you@example.com')
         process.exit(1)
     }
 
     if (typeof email !== 'string') {
-        log('ERROR', `Invalid email type: expected string, got ${typeof email}`)
-        log('ERROR', 'Usage: node script.js -email you@example.com')
+        log('ERROR', `无效的邮箱类型: 期望是字符串, 实际得到 ${typeof email}`)
+        log('ERROR', '用法: node script.js -email you@example.com')
         process.exit(1)
     }
 
     if (!email.includes('@')) {
-        log('ERROR', `Invalid email format: "${email}"`)
-        log('ERROR', 'Email must contain "@" symbol')
-        log('ERROR', 'Example: you@example.com')
+        log('ERROR', `无效的邮箱格式: "${email}"`)
+        log('ERROR', '邮箱必须包含 "@" 符号')
+        log('ERROR', '示例: you@example.com')
         process.exit(1)
     }
 
@@ -73,8 +73,8 @@ export function loadJsonFile(possiblePaths, required = true) {
                 const content = fs.readFileSync(filePath, 'utf8')
                 return { data: JSON.parse(content), path: filePath }
             } catch (error) {
-                log('ERROR', `Failed to parse JSON file: ${filePath}`)
-                log('ERROR', `Parse error: ${error.message}`)
+                log('ERROR', `解析JSON文件失败: ${filePath}`)
+                log('ERROR', `解析错误: ${error.message}`)
                 if (required) process.exit(1)
                 return null
             }
@@ -82,8 +82,8 @@ export function loadJsonFile(possiblePaths, required = true) {
     }
 
     if (required) {
-        log('ERROR', 'Required file not found')
-        log('ERROR', 'Searched in the following locations:')
+        log('ERROR', '找不到必需的文件')
+        log('ERROR', '在以下位置搜索:')
         possiblePaths.forEach(p => log('ERROR', `  - ${p}`))
         process.exit(1)
     }
@@ -105,9 +105,9 @@ export function loadConfig(projectRoot, isDev = false) {
     if (!result.data.workers) missingFields.push('workers')
 
     if (missingFields.length > 0) {
-        log('ERROR', 'Invalid config.json - missing required fields:')
+        log('ERROR', '无效的 config.json - 缺少必需字段:')
         missingFields.forEach(field => log('ERROR', `  - ${field}`))
-        log('ERROR', `Config file: ${result.path}`)
+        log('ERROR', `配置文件: ${result.path}`)
         process.exit(1)
     }
 
@@ -153,8 +153,8 @@ export async function loadCookies(sessionBase, type = 'desktop') {
         const content = await fs.promises.readFile(cookiesFile, 'utf8')
         return JSON.parse(content)
     } catch (error) {
-        log('WARN', `Failed to load cookies from: ${cookiesFile}`)
-        log('WARN', `Error: ${error.message}`)
+        log('WARN', `从以下位置加载 cookies 失败: ${cookiesFile}`)
+        log('WARN', `错误: ${error.message}`)
         return []
     }
 }
@@ -170,8 +170,8 @@ export async function loadFingerprint(sessionBase, type = 'desktop') {
         const content = await fs.promises.readFile(fpFile, 'utf8')
         return JSON.parse(content)
     } catch (error) {
-        log('WARN', `Failed to load fingerprint from: ${fpFile}`)
-        log('WARN', `Error: ${error.message}`)
+        log('WARN', `从以下位置加载指纹失败: ${fpFile}`)
+        log('WARN', `错误: ${error.message}`)
         return null
     }
 }
@@ -203,7 +203,7 @@ export function setupCleanupHandlers(cleanupFn) {
         try {
             await cleanupFn()
         } catch (error) {
-            log('ERROR', 'Cleanup failed:', error.message)
+            log('ERROR', '清理失败:', error.message)
         }
         process.exit(0)
     }
@@ -219,14 +219,14 @@ export function validateDeletionPath(targetPath, projectRoot) {
     if (!normalizedTarget.startsWith(normalizedRoot)) {
         return {
             valid: false,
-            error: 'Path is outside project root'
+            error: '路径超出项目根目录范围'
         }
     }
 
     if (normalizedTarget === normalizedRoot) {
         return {
             valid: false,
-            error: 'Cannot delete project root'
+            error: '不能删除项目根目录'
         }
     }
 
@@ -234,7 +234,7 @@ export function validateDeletionPath(targetPath, projectRoot) {
     if (pathSegments.length < 3) {
         return {
             valid: false,
-            error: 'Path is too shallow (safety check failed)'
+            error: '路径层级太浅 (安全检查失败)'
         }
     }
 
@@ -245,25 +245,25 @@ export function safeRemoveDirectory(dirPath, projectRoot) {
     const validation = validateDeletionPath(dirPath, projectRoot)
 
     if (!validation.valid) {
-        log('ERROR', 'Directory deletion failed - safety check:')
-        log('ERROR', `  Reason: ${validation.error}`)
-        log('ERROR', `  Target: ${dirPath}`)
-        log('ERROR', `  Project root: ${projectRoot}`)
+        log('ERROR', '目录删除失败 - 安全检查:')
+        log('ERROR', `  原因: ${validation.error}`)
+        log('ERROR', `  目标: ${dirPath}`)
+        log('ERROR', `  项目根目录: ${projectRoot}`)
         return false
     }
 
     if (!fs.existsSync(dirPath)) {
-        log('INFO', `Directory does not exist: ${dirPath}`)
+        log('INFO', `目录不存在: ${dirPath}`)
         return true
     }
 
     try {
         fs.rmSync(dirPath, { recursive: true, force: true })
-        log('SUCCESS', `Directory removed: ${dirPath}`)
+        log('SUCCESS', `目录已删除: ${dirPath}`)
         return true
     } catch (error) {
-        log('ERROR', `Failed to remove directory: ${dirPath}`)
-        log('ERROR', `Error: ${error.message}`)
+        log('ERROR', `删除目录失败: ${dirPath}`)
+        log('ERROR', `错误: ${error.message}`)
         return false
     }
 }

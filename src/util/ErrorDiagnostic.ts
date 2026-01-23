@@ -16,14 +16,14 @@ export async function errorDiagnostic(page: Page, error: Error): Promise<void> {
             return
         }
 
-        // Error log content
+        // 错误日志内容
         const errorLog = `
-Name: ${error.name}
-Message: ${error.message}
-Timestamp: ${new Date().toISOString()}
+名称: ${error.name}
+消息: ${error.message}
+时间戳: ${new Date().toISOString()}
 ---------------------------------------------------
-Stack Trace:
-${error.stack || 'No stack trace available'}
+堆栈跟踪:
+${error.stack || '无可用堆栈跟踪'}
         `.trim()
 
         const [htmlContent, screenshotBuffer] = await Promise.all([
@@ -39,8 +39,8 @@ ${error.stack || 'No stack trace available'}
             fs.writeFile(path.join(outputDir, 'error.txt'), errorLog)
         ])
 
-        console.log(`Diagnostics saved to: ${outputDir}`)
+        console.log(`诊断信息已保存至: ${outputDir}`)
     } catch (error) {
-        console.error('Unable to create error diagnostics:', error)
+        console.error('无法创建错误诊断信息:', error)
     }
 }

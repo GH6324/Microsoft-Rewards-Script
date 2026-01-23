@@ -28,7 +28,7 @@ export class SearchOnBing extends Workers {
         this.bot.logger.info(
             this.bot.isMobile,
             'SEARCH-ON-BING',
-            `Starting SearchOnBing | offerId=${offerId} | title="${promotion.title}" | currentPoints=${this.oldBalance}`
+            `开始必应搜索 | offerId=${offerId} | 标题="${promotion.title}" | 当前积分=${this.oldBalance}`
         )
 
         try {
@@ -44,45 +44,45 @@ export class SearchOnBing extends Workers {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'SEARCH-ON-BING',
-                `Prepared headers for SearchOnBing | offerId=${offerId} | cookieLength=${this.cookieHeader.length} | fingerprintHeaderKeys=${Object.keys(this.fingerprintHeader).length}`
+                `为必应搜索准备的头部信息 | offerId=${offerId} | cookie长度=${this.cookieHeader.length} | 指纹头键数=${Object.keys(this.fingerprintHeader).length}`
             )
 
-            this.bot.logger.debug(this.bot.isMobile, 'SEARCH-ON-BING', `Activating search task | offerId=${offerId}`)
+            this.bot.logger.debug(this.bot.isMobile, 'SEARCH-ON-BING', `激活搜索任务 | offerId=${offerId}`)
 
             const activated = await this.activateSearchTask(promotion)
             if (!activated) {
                 this.bot.logger.warn(
                     this.bot.isMobile,
                     'SEARCH-ON-BING',
-                    `Search activity couldn't be activated, aborting | offerId=${offerId}`
+                    `搜索活动无法激活，正在中止 | offerId=${offerId}`
                 )
                 return
             }
 
-            // Do the bing search here
+            // 在这里进行必应搜索
             const queries = await this.getSearchQueries(promotion)
 
-            // Run through the queries
+            // 执行查询
             await this.searchBing(page, queries)
 
             if (this.success) {
                 this.bot.logger.info(
                     this.bot.isMobile,
                     'SEARCH-ON-BING',
-                    `Completed SearchOnBing | offerId=${offerId} | startBalance=${this.oldBalance} | finalBalance=${this.bot.userData.currentPoints}`
+                    `完成必应搜索 | offerId=${offerId} | 起始余额=${this.oldBalance} | 最终余额=${this.bot.userData.currentPoints}`
                 )
             } else {
                 this.bot.logger.warn(
                     this.bot.isMobile,
                     'SEARCH-ON-BING',
-                    `Failed SearchOnBing | offerId=${offerId} | startBalance=${this.oldBalance} | finalBalance=${this.bot.userData.currentPoints}`
+                    `必应搜索失败 | offerId=${offerId} | 起始余额=${this.oldBalance} | 最终余额=${this.bot.userData.currentPoints}`
                 )
             }
         } catch (error) {
             this.bot.logger.error(
                 this.bot.isMobile,
                 'SEARCH-ON-BING',
-                `Error in doSearchOnBing | offerId=${promotion.offerId} | message=${error instanceof Error ? error.message : String(error)}`
+                `doSearchOnBing中出现错误 | offerId=${promotion.offerId} | 消息=${error instanceof Error ? error.message : String(error)}`
             )
         }
     }
@@ -93,17 +93,17 @@ export class SearchOnBing extends Workers {
         this.bot.logger.debug(
             this.bot.isMobile,
             'SEARCH-ON-BING-SEARCH',
-            `Starting search loop | queriesCount=${queries.length} | oldBalance=${this.oldBalance}`
+            `开始搜索循环 | 查询数量=${queries.length} | 旧余额=${this.oldBalance}`
         )
 
         let i = 0
         for (const query of queries) {
             try {
-                this.bot.logger.debug(this.bot.isMobile, 'SEARCH-ON-BING-SEARCH', `Processing query | query="${query}"`)
+                this.bot.logger.debug(this.bot.isMobile, 'SEARCH-ON-BING-SEARCH', `处理查询 | 查询="${query}"`)
 
                 await this.bot.mainMobilePage.goto(this.bingHome)
 
-                // Wait until page loaded
+                // 等待页面加载完成
                 await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {})
 
                 await this.bot.browser.utils.tryDismissAllMessages(page)
@@ -122,14 +122,14 @@ export class SearchOnBing extends Workers {
 
                 await this.bot.utils.wait(this.bot.utils.randomDelay(5000, 7000))
 
-                // Check for point updates
+                // 检查积分更新
                 const newBalance = await this.bot.browser.func.getCurrentPoints()
                 this.gainedPoints = newBalance - this.oldBalance
 
                 this.bot.logger.debug(
                     this.bot.isMobile,
                     'SEARCH-ON-BING-SEARCH',
-                    `Balance check after query | query="${query}" | oldBalance=${this.oldBalance} | newBalance=${newBalance} | gainedPoints=${this.gainedPoints}`
+                    `查询后余额检查 | 查询="${query}" | 旧余额=${this.oldBalance} | 新余额=${newBalance} | 获得积分=${this.gainedPoints}`
                 )
 
                 if (this.gainedPoints > 0) {
@@ -139,7 +139,7 @@ export class SearchOnBing extends Workers {
                     this.bot.logger.info(
                         this.bot.isMobile,
                         'SEARCH-ON-BING-SEARCH',
-                        `SearchOnBing query completed | query="${query}" | gainedPoints=${this.gainedPoints} | oldBalance=${this.oldBalance} | newBalance=${newBalance}`,
+                        `必应搜索查询完成 | 查询="${query}" | 获得积分=${this.gainedPoints} | 旧余额=${this.oldBalance} | 新余额=${newBalance}`,
                         'green'
                     )
 
@@ -149,14 +149,14 @@ export class SearchOnBing extends Workers {
                     this.bot.logger.warn(
                         this.bot.isMobile,
                         'SEARCH-ON-BING-SEARCH',
-                        `${++i}/${queries.length} | noPoints=1 | query="${query}"`
+                        `${++i}/${queries.length} | 无积分=1 | 查询="${query}"`
                     )
                 }
             } catch (error) {
                 this.bot.logger.error(
                     this.bot.isMobile,
                     'SEARCH-ON-BING-SEARCH',
-                    `Error during search loop | query="${query}" | message=${error instanceof Error ? error.message : String(error)}`
+                    `搜索循环期间出错 | 查询="${query}" | 消息=${error instanceof Error ? error.message : String(error)}`
                 )
             } finally {
                 await this.bot.utils.wait(this.bot.utils.randomDelay(5000, 15000))
@@ -167,17 +167,17 @@ export class SearchOnBing extends Workers {
         this.bot.logger.warn(
             this.bot.isMobile,
             'SEARCH-ON-BING-SEARCH',
-            `Finished all queries with no points gained | queriesTried=${queries.length} | oldBalance=${this.oldBalance} | finalBalance=${this.bot.userData.currentPoints}`
+            `完成所有查询但未获得积分 | 尝试查询数=${queries.length} | 旧余额=${this.oldBalance} | 最终余额=${this.bot.userData.currentPoints}`
         )
     }
 
-    // The task needs to be activated before being able to complete it
+    // 任务需要在能够完成之前被激活
     private async activateSearchTask(promotion: BasePromotion): Promise<boolean> {
         try {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'SEARCH-ON-BING-ACTIVATE',
-                `Preparing activation request | offerId=${promotion.offerId} | hash=${promotion.hash}`
+                `准备激活请求 | offerId=${promotion.offerId} | 哈希=${promotion.hash}`
             )
 
             const formData = new URLSearchParams({
@@ -207,14 +207,14 @@ export class SearchOnBing extends Workers {
             this.bot.logger.info(
                 this.bot.isMobile,
                 'SEARCH-ON-BING-ACTIVATE',
-                `Successfully activated activity | status=${response.status} | offerId=${promotion.offerId}`
+                `成功激活活动 | 状态=${response.status} | offerId=${promotion.offerId}`
             )
             return true
         } catch (error) {
             this.bot.logger.error(
                 this.bot.isMobile,
                 'SEARCH-ON-BING-ACTIVATE',
-                `Activation failed | offerId=${promotion.offerId} | message=${error instanceof Error ? error.message : String(error)}`
+                `激活失败 | offerId=${promotion.offerId} | 消息=${error instanceof Error ? error.message : String(error)}`
             )
             return false
         }
@@ -230,7 +230,7 @@ export class SearchOnBing extends Workers {
 
         try {
             if (this.bot.config.searchOnBingLocalQueries) {
-                this.bot.logger.debug(this.bot.isMobile, 'SEARCH-ON-BING-QUERY', 'Using local queries config file')
+                this.bot.logger.debug(this.bot.isMobile, 'SEARCH-ON-BING-QUERY', '使用本地查询配置文件')
 
                 const data = fs.readFileSync(path.join(__dirname, '../bing-search-activity-queries.json'), 'utf8')
                 queries = JSON.parse(data)
@@ -238,16 +238,16 @@ export class SearchOnBing extends Workers {
                 this.bot.logger.debug(
                     this.bot.isMobile,
                     'SEARCH-ON-BING-QUERY',
-                    `Loaded queries config | source=local | entries=${queries.length}`
+                    `已加载查询配置 | 来源=本地 | 条目数=${queries.length}`
                 )
             } else {
                 this.bot.logger.debug(
                     this.bot.isMobile,
                     'SEARCH-ON-BING-QUERY',
-                    'Fetching queries config from remote repository'
+                    '从远程仓库获取查询配置'
                 )
 
-                // Fetch from the repo directly so the user doesn't need to redownload the script for the new activities
+                // 直接从仓库获取，这样用户不需要重新下载脚本来获取新活动
                 const response = await this.bot.axios.request({
                     method: 'GET',
                     url: 'https://raw.githubusercontent.com/TheNetsky/Microsoft-Rewards-Script/refs/heads/v3/src/functions/bing-search-activity-queries.json'
@@ -257,7 +257,7 @@ export class SearchOnBing extends Workers {
                 this.bot.logger.debug(
                     this.bot.isMobile,
                     'SEARCH-ON-BING-QUERY',
-                    `Loaded queries config | source=remote | entries=${queries.length}`
+                    `已加载查询配置 | 来源=远程 | 条目数=${queries.length}`
                 )
             }
 
@@ -271,7 +271,7 @@ export class SearchOnBing extends Workers {
                 this.bot.logger.info(
                     this.bot.isMobile,
                     'SEARCH-ON-BING-QUERY',
-                    `Found answers for activity title | source=${this.bot.config.searchOnBingLocalQueries ? 'local' : 'remote'} | title="${promotion.title}" | answersCount=${answer.length} | firstQuery="${answer[0]}"`
+                    `找到活动标题的答案 | 来源=${this.bot.config.searchOnBingLocalQueries ? 'local' : 'remote'} | 标题="${promotion.title}" | 答案数量=${answer.length} | 第一个查询="${answer[0]}"`
                 )
 
                 return answer
@@ -279,7 +279,7 @@ export class SearchOnBing extends Workers {
                 this.bot.logger.info(
                     this.bot.isMobile,
                     'SEARCH-ON-BING-QUERY',
-                    `No matching title in queries config | source=${this.bot.config.searchOnBingLocalQueries ? 'local' : 'remote'} | title="${promotion.title}"`
+                    `查询配置中没有匹配的标题 | 来源=${this.bot.config.searchOnBingLocalQueries ? 'local' : 'remote'} | 标题="${promotion.title}"`
                 )
 
                 const queryCore = new QueryCore(this.bot)
@@ -290,7 +290,7 @@ export class SearchOnBing extends Workers {
                 this.bot.logger.debug(
                     this.bot.isMobile,
                     'SEARCH-ON-BING-QUERY',
-                    `Requesting Bing suggestions | queryDescription="${queryDescription}"`
+                    `请求必应建议 | 查询描述="${queryDescription}"`
                 )
 
                 const bingSuggestions = await queryCore.getBingSuggestions(queryDescription)
@@ -298,22 +298,22 @@ export class SearchOnBing extends Workers {
                 this.bot.logger.debug(
                     this.bot.isMobile,
                     'SEARCH-ON-BING-QUERY',
-                    `Bing suggestions result | count=${bingSuggestions.length} | title="${promotion.title}"`
+                    `必应建议结果 | 数量=${bingSuggestions.length} | 标题="${promotion.title}"`
                 )
 
-                // If no suggestions found
+                // 如果未找到建议
                 if (!bingSuggestions.length) {
                     this.bot.logger.info(
                         this.bot.isMobile,
                         'SEARCH-ON-BING-QUERY',
-                        `No suggestions found, falling back to activity title | title="${promotion.title}"`
+                        `未找到建议，回退到活动标题 | 标题="${promotion.title}"`
                     )
                     return [promotion.title]
                 } else {
                     this.bot.logger.info(
                         this.bot.isMobile,
                         'SEARCH-ON-BING-QUERY',
-                        `Using Bing suggestions as search queries | count=${bingSuggestions.length} | title="${promotion.title}"`
+                        `使用必应建议作为搜索查询 | 数量=${bingSuggestions.length} | 标题="${promotion.title}"`
                     )
                     return bingSuggestions
                 }
@@ -322,7 +322,7 @@ export class SearchOnBing extends Workers {
             this.bot.logger.error(
                 this.bot.isMobile,
                 'SEARCH-ON-BING-QUERY',
-                `Error while resolving search queries | title="${promotion.title}" | message=${error instanceof Error ? error.message : String(error)} | fallback=promotionTitle`
+                `解析搜索查询时出错 | 标题="${promotion.title}" | 消息=${error instanceof Error ? error.message : String(error)} | 回退=活动标题`
             )
             return [promotion.title]
         }

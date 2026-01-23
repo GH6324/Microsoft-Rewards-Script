@@ -56,6 +56,6 @@ export async function flushNtfyQueue(timeoutMs = 5000): Promise<void> {
         (async () => {
             await ntfyQueue.onIdle()
         })(),
-        new Promise<void>((_, reject) => setTimeout(() => reject(new Error('ntfy flush timeout')), timeoutMs))
+        new Promise<void>((_, reject) => setTimeout(() => reject(new Error('ntfy刷新超时')), timeoutMs))
     ]).catch(() => {})
 }

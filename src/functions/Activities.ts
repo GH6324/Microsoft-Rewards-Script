@@ -27,7 +27,6 @@ import type { Promotion } from '../interface/AppDashBoardData'
 // 活动处理类 - 负责执行各种Microsoft Rewards活动
 export default class Activities {
     private bot: MicrosoftRewardsBot
-    private handlers: ActivityHandler[] = []
 
     constructor(bot: MicrosoftRewardsBot) {
         this.bot = bot

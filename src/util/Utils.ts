@@ -11,6 +11,12 @@ export default class Util {
         })
     }
 
+    async waitRandom(min_ms: number, max_ms: number, distribution: 'uniform' | 'normal' = 'uniform'): Promise<void> {
+        return new Promise<void>((resolve) => {
+            setTimeout(resolve, this.randomNumber(min_ms, max_ms, distribution))
+        })
+    }
+
     getFormattedDate(ms = Date.now()): string {
         const today = new Date(ms)
         const month = String(today.getMonth() + 1).padStart(2, '0') //  一月是0
@@ -51,17 +57,7 @@ export default class Util {
     }
 
     chunkArray<T>(arr: T[], numChunks: number): T[][] {
-        // 验证输入以防止除零或无效块
-        if (numChunks <= 0) {
-            throw new Error(`无效的 numChunks: ${numChunks}。必须是正整数。`)
-        }
-        
-        if (arr.length === 0) {
-            return []
-        }
-        
-        const safeNumChunks = Math.max(1, Math.floor(numChunks))
-        const chunkSize = Math.ceil(arr.length / safeNumChunks)
+        const chunkSize = Math.ceil(arr.length / numChunks)
         const chunks: T[][] = []
 
         for (let i = 0; i < arr.length; i += chunkSize) {

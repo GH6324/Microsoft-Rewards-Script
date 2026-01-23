@@ -84,6 +84,6 @@ COPY --chmod=755 scripts/docker/run_daily.sh ./scripts/docker/run_daily.sh
 COPY --chmod=644 src/crontab.template /etc/cron.d/microsoft-rewards-cron.template
 COPY --chmod=755 scripts/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
-# Entrypoint handles TZ and launch
+# Entrypoint handles TZ, initial run toggle, cron templating & launch
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["node", "dist/index.js"]
+CMD ["sh", "-c", "echo 'Container started; cron is running.'"]

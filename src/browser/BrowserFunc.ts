@@ -3,7 +3,6 @@ import type { AxiosRequestConfig } from 'axios'
 
 import type { MicrosoftRewardsBot } from '../index'
 import { saveSessionData } from '../util/Load'
-import { TIMEOUTS, RETRY_LIMITS, SELECTORS, URLS } from '../constants'
 
 import type { Counters, DashboardData } from './../interface/DashboardData'
 import type { AppUserData } from '../interface/AppUserData'
@@ -19,8 +18,8 @@ export default class BrowserFunc {
     }
 
     /**
-     * Fetch user desktop dashboard data
-     * @returns {DashboardData} Object of user bing rewards dashboard data
+     * 获取用户桌面仪表板数据
+     * @returns {DashboardData} 用户必应奖励仪表板数据对象
      */
     async getDashboardData(): Promise<DashboardData> {
         try {
@@ -46,9 +45,9 @@ export default class BrowserFunc {
             }
             throw new Error('Dashboard data missing from API response')
         } catch (error) {
-            this.bot.logger.warn(this.bot.isMobile, 'GET-DASHBOARD-DATA', 'API failed, trying HTML fallback')
+            this.bot.logger.warn(this.bot.isMobile, 'GET-DASHBOARD-DATA', 'API失败，尝试HTML回退方案')
 
-            // Try using script from dashboard page
+            // 尝试使用仪表板页面的脚本
             try {
                 const request: AxiosRequestConfig = {
                     url: this.bot.config.baseURL,
@@ -65,13 +64,13 @@ export default class BrowserFunc {
                 const match = response.data.match(/var\s+dashboard\s*=\s*({.*?});/s)
 
                 if (!match?.[1]) {
-                    throw new Error('Dashboard script not found in HTML')
+                    throw new Error('在HTML中未找到仪表板脚本')
                 }
 
                 return JSON.parse(match[1]) as DashboardData
             } catch (fallbackError) {
-                // If both fail
-                this.bot.logger.error(this.bot.isMobile, 'GET-DASHBOARD-DATA', 'Failed to get dashboard data')
+                // 如果两者都失败
+                this.bot.logger.error(this.bot.isMobile, 'GET-DASHBOARD-DATA', '获取仪表板数据失败')
                 throw fallbackError
             }
         }
@@ -79,8 +78,8 @@ export default class BrowserFunc {
 
 
     /**
-     * Fetch user app dashboard data
-     * @returns {AppDashboardData} Object of user bing rewards dashboard data
+     * 获取用户应用仪表板数据
+     * @returns {AppDashboardData} 用户必应奖励仪表板数据对象
      */
     async getAppDashboardData(): Promise<AppDashboardData> {
         try {
@@ -100,15 +99,15 @@ export default class BrowserFunc {
             this.bot.logger.error(
                 this.bot.isMobile,
                 'GET-APP-DASHBOARD-DATA',
-                `Error fetching dashboard data: ${error instanceof Error ? error.message : String(error)}`
+                `获取仪表板数据出错: ${error instanceof Error ? error.message : String(error)}`
             )
             throw error
         }
     }
 
     /**
-     * Fetch user xbox dashboard data
-     * @returns {XboxDashboardData} Object of user bing rewards dashboard data
+     * 获取用户xbox仪表板数据
+     * @returns {XboxDashboardData} 用户必应奖励仪表板数据对象
      */
     async getXBoxDashboardData(): Promise<XboxDashboardData> {
         try {
@@ -128,17 +127,17 @@ export default class BrowserFunc {
             this.bot.logger.error(
                 this.bot.isMobile,
                 'GET-XBOX-DASHBOARD-DATA',
-                `Error fetching dashboard data: ${error instanceof Error ? error.message : String(error)}`
+                `获取仪表板数据出错: ${error instanceof Error ? error.message : String(error)}`
             )
             throw error
         }
     }
 
     /**
-     * Get search point counters
+     * 获取搜索积分计数器
      */
     async getSearchPoints(): Promise<Counters> {
-        const dashboardData = await this.getDashboardData() // Always fetch newest data
+        const dashboardData = await this.getDashboardData() // 始终获取最新数据
 
         return dashboardData.userStatus.counters
     }
@@ -158,7 +157,7 @@ export default class BrowserFunc {
     }
 
     /**
-     * Get total earnable points with web browser
+     * 获取通过网页浏览器可赚取的总积分
      */
     async getBrowserEarnablePoints(): Promise<BrowserEarnablePoints> {
         try {
@@ -207,14 +206,14 @@ export default class BrowserFunc {
             this.bot.logger.error(
                 this.bot.isMobile,
                 'GET-BROWSER-EARNABLE-POINTS',
-                `An error occurred: ${error instanceof Error ? error.message : String(error)}`
+                `发生错误: ${error instanceof Error ? error.message : String(error)}`
             )
             throw error
         }
     }
 
     /**
-     * Get total earnable points with mobile app
+     * 获取通过移动应用可赚取的总积分
      */
     async getAppEarnablePoints(): Promise<AppEarnablePoints> {
         try {
@@ -270,14 +269,14 @@ export default class BrowserFunc {
             this.bot.logger.error(
                 this.bot.isMobile,
                 'GET-APP-EARNABLE-POINTS',
-                `An error occurred: ${error instanceof Error ? error.message : String(error)}`
+                `发生错误: ${error instanceof Error ? error.message : String(error)}`
             )
             throw error
         }
     }
     /**
-     * Get current point amount
-     * @returns {number} Current total point amount
+     * 获取当前积分金额
+     * @returns {number} 当前总积分金额
      */
     async getCurrentPoints(): Promise<number> {
         try {
@@ -288,7 +287,7 @@ export default class BrowserFunc {
             this.bot.logger.error(
                 this.bot.isMobile,
                 'GET-CURRENT-POINTS',
-                `An error occurred: ${error instanceof Error ? error.message : String(error)}`
+                `发生错误: ${error instanceof Error ? error.message : String(error)}`
             )
             throw error
         }
@@ -298,24 +297,24 @@ export default class BrowserFunc {
         try {
             const cookies = await browser.cookies()
 
-            // Save cookies
+            // 保存cookies
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'CLOSE-BROWSER',
-                `Saving ${cookies.length} cookies to session folder!`
+                `保存 ${cookies.length} 个cookies到会话文件夹！`
             )
             await saveSessionData(this.bot.config.sessionPath, cookies, email, this.bot.isMobile)
 
             await this.bot.utils.waitRandom(2000,5000)
 
-            // Close browser
+            // 关闭浏览器
             await browser.close()
-            this.bot.logger.info(this.bot.isMobile, 'CLOSE-BROWSER', 'Browser closed cleanly!')
+            this.bot.logger.info(this.bot.isMobile, 'CLOSE-BROWSER', '浏览器已干净地关闭！')
         } catch (error) {
             this.bot.logger.error(
                 this.bot.isMobile,
                 'CLOSE-BROWSER',
-                `An error occurred: ${error instanceof Error ? error.message : String(error)}`
+                `发生错误: ${error instanceof Error ? error.message : String(error)}`
             )
             throw error
         }

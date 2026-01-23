@@ -1,6 +1,6 @@
 /**
- * Central constants file for the Microsoft Rewards Script
- * Defines timeouts, retry limits, and other magic numbers used throughout the application
+ * 微软奖励脚本的核心常量文件
+ * 定义了整个应用程序中使用的超时、重试限制和其他魔法数字
  */
 
 export const TIMEOUTS = {
@@ -11,7 +11,7 @@ export const TIMEOUTS = {
   VERY_LONG: 5000,
   EXTRA_LONG: 10000,
   DASHBOARD_WAIT: 30000,
-  LOGIN_MAX: 180000, // 3 minutes
+  LOGIN_MAX: 180000, // 3分钟
   NETWORK_IDLE: 5000
 } as const
 

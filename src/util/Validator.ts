@@ -20,7 +20,7 @@ const DelaySchema = z.object({
     max: NumberOrString
 })
 
-const QueryEngineSchema = z.enum(['google', 'wikipedia', 'reddit', 'local'])
+const QueryEngineSchema = z.enum(['china', 'google', 'wikipedia', 'reddit', 'local'])
 
 // Webhook
 const WebhookSchema = z.object({
@@ -116,16 +116,16 @@ export function checkNodeVersion(): void {
         const requiredVersion = pkg.engines?.node
 
         if (!requiredVersion) {
-            console.warn('No Node.js version requirement found in package.json "engines" field.')
+            console.warn('在package.json "engines" 字段中未找到Node.js版本要求。')
             return
         }
 
         if (!semver.satisfies(process.version, requiredVersion)) {
-            console.error(`Current Node.js version ${process.version} does not satisfy requirement: ${requiredVersion}`)
+            console.error(`当前Node.js版本 ${process.version} 不满足要求: ${requiredVersion}`)
             process.exit(1)
         }
     } catch (error) {
-        console.error('Failed to validate Node.js version:', error)
+        console.error('验证Node.js版本失败:', error)
         process.exit(1)
     }
 }

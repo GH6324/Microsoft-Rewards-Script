@@ -19,7 +19,7 @@ export class QueryCore {
     ): Promise<string[]> {
         const {
             shuffle = false,
-            sourceOrder = ['google', 'wikipedia', 'reddit', 'local'],
+            sourceOrder = ['china', 'google', 'wikipedia', 'reddit', 'local'],
             related = true,
             langCode = 'en',
             geoLocale = 'US'
@@ -29,33 +29,38 @@ export class QueryCore {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'QUERY-MANAGER',
-                `start | shuffle=${shuffle}, related=${related}, lang=${langCode}, geo=${geoLocale}, sources=${sourceOrder.join(',')}`
+                `开始 | shuffle=${shuffle}, related=${related}, lang=${langCode}, geo=${geoLocale}, sources=${sourceOrder.join(',')}`
             )
 
             const topicLists: string[][] = []
 
             const sourceHandlers: Record<
-                'google' | 'wikipedia' | 'reddit' | 'local',
+                'china' | 'google' | 'wikipedia' | 'reddit' | 'local',
                 (() => Promise<string[]>) | (() => string[])
             > = {
                 google: async () => {
                     const topics = await this.getGoogleTrends(geoLocale.toUpperCase()).catch(() => [])
-                    this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', `google: ${topics.length}`)
+                    this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', `谷歌: ${topics.length}`)
                     return topics
                 },
                 wikipedia: async () => {
                     const topics = await this.getWikipediaTrending(langCode).catch(() => [])
-                    this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', `wikipedia: ${topics.length}`)
+                    this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', `维基百科: ${topics.length}`)
                     return topics
                 },
                 reddit: async () => {
                     const topics = await this.getRedditTopics().catch(() => [])
-                    this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', `reddit: ${topics.length}`)
+                    this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', `Reddit: ${topics.length}`)
                     return topics
                 },
                 local: () => {
                     const topics = this.getLocalQueryList()
-                    this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', `local: ${topics.length}`)
+                    this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', `本地: ${topics.length}`)
+                    return topics
+                },
+                china: async () => {
+                    const topics = await this.getChinaTrends(geoLocale.toUpperCase()).catch(() => [])
+                    this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', `中国: ${topics.length}`)
                     return topics
                 }
             }
@@ -71,61 +76,61 @@ export class QueryCore {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'QUERY-MANAGER',
-                `sources combined | rawTotal=${topicLists.flat().length}`
+                `源组合 | 原始总数=${topicLists.flat().length}`
             )
 
             const baseTopics = this.normalizeAndDedupe(topicLists.flat())
 
             if (!baseTopics.length) {
-                this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', 'No base topics found (all sources empty)')
+                this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', '未找到基础主题（所有源均为空）')
                 return []
             }
 
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'QUERY-MANAGER',
-                `baseTopics dedupe | before=${topicLists.flat().length} | after=${baseTopics.length}`
+                `基础主题去重 | 之前=${topicLists.flat().length} | 之后=${baseTopics.length}`
             )
-            this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', `baseTopics: ${baseTopics.length}`)
+            this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', `基础主题: ${baseTopics.length}`)
 
             const clusters = related ? await this.buildRelatedClusters(baseTopics, langCode) : baseTopics.map(t => [t])
 
             this.bot.utils.shuffleArray(clusters)
-            this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', 'clusters shuffled')
+            this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', '聚类已打乱')
 
             let finalQueries = clusters.flat()
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'QUERY-MANAGER',
-                `clusters flattened | total=${finalQueries.length}`
+                `聚类已展平 | 总数=${finalQueries.length}`
             )
 
-            // Do not cluster searches and shuffle
+            // 不要聚类搜索并打乱
             if (shuffle) {
                 this.bot.utils.shuffleArray(finalQueries)
-                this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', 'finalQueries shuffled')
+                this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', '最终查询已打乱')
             }
 
             finalQueries = this.normalizeAndDedupe(finalQueries)
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'QUERY-MANAGER',
-                `finalQueries dedupe | after=${finalQueries.length}`
+                `最终查询去重 | 之后=${finalQueries.length}`
             )
 
             if (!finalQueries.length) {
-                this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', 'finalQueries deduped to 0')
+                this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', '最终查询去重后为0')
                 return []
             }
 
-            this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', `final queries: ${finalQueries.length}`)
+            this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', `最终查询: ${finalQueries.length}`)
 
             return finalQueries
         } catch (error) {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'QUERY-MANAGER',
-                `error: ${error instanceof Error ? `${error.name}: ${error.message}\n${error.stack ?? ''}` : String(error)}`
+                `错误: ${error instanceof Error ? `${error.name}: ${error.message}\n${error.stack ?? ''}` : String(error)}`
             )
             return []
         }
@@ -141,12 +146,12 @@ export class QueryCore {
         this.bot.logger.debug(
             this.bot.isMobile,
             'QUERY-MANAGER',
-            `related enabled | baseTopics=${baseTopics.length} | expand=${head.length} | passthrough=${tail.length} | lang=${langCode}`
+            `启用相关搜索 | 基础主题=${baseTopics.length} | 扩展=${head.length} | 直接通过=${tail.length} | 语言=${langCode}`
         )
         this.bot.logger.debug(
             this.bot.isMobile,
             'QUERY-MANAGER',
-            `bing expansion enabled | limit=${LIMIT} | totalCalls=${head.length * 2}`
+            `启用必应扩展 | 限制=${LIMIT} | 总调用次数=${head.length * 2}`
         )
 
         for (const topic of head) {
@@ -161,14 +166,14 @@ export class QueryCore {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'QUERY-MANAGER',
-                `cluster expanded | topic="${topic}" | suggestions=${suggestions.length}->${usedSuggestions.length} | related=${relatedTerms.length}->${usedRelated.length} | clusterSize=${cluster.length}`
+                `聚类已扩展 | 主题="${topic}" | 建议=${suggestions.length}->${usedSuggestions.length} | 相关=${relatedTerms.length}->${usedRelated.length} | 聚类大小=${cluster.length}`
             )
 
             clusters.push(cluster)
         }
 
         if (tail.length) {
-            this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', `cluster passthrough | topics=${tail.length}`)
+            this.bot.logger.debug(this.bot.isMobile, 'QUERY-MANAGER', `聚类直通 | 主题=${tail.length}`)
 
             for (const topic of tail) {
                 clusters.push([topic])
@@ -213,7 +218,7 @@ export class QueryCore {
             const response = await this.bot.axios.request(request, this.bot.config.proxy.queryEngine)
             const trendsData = this.extractJsonFromResponse(response.data)
             if (!trendsData) {
-                this.bot.logger.debug(this.bot.isMobile, 'SEARCH-GOOGLE-TRENDS', 'No trendsData parsed from response')
+                this.bot.logger.debug(this.bot.isMobile, 'SEARCH-GOOGLE-TRENDS', '未能从响应中解析趋势数据')
                 return []
             }
 
@@ -233,7 +238,7 @@ export class QueryCore {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'SEARCH-GOOGLE-TRENDS',
-                `request failed: ${
+                `请求失败: ${
                     error instanceof Error ? `${error.name}: ${error.message}\n${error.stack ?? ''}` : String(error)
                 }`
             )
@@ -275,7 +280,7 @@ export class QueryCore {
                 this.bot.logger.debug(
                     this.bot.isMobile,
                     'SEARCH-BING-SUGGESTIONS',
-                    `empty suggestions | query="${query}" | lang=${langCode}`
+                    `空建议 | 查询="${query}" | 语言=${langCode}`
                 )
             }
 
@@ -284,7 +289,7 @@ export class QueryCore {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'SEARCH-BING-SUGGESTIONS',
-                `request failed | query="${query}" | lang=${langCode} | error=${
+                `请求失败 | 查询="${query}" | 语言=${langCode} | 错误=${
                     error instanceof Error ? `${error.name}: ${error.message}\n${error.stack ?? ''}` : String(error)
                 }`
             )
@@ -310,7 +315,7 @@ export class QueryCore {
                 this.bot.logger.debug(
                     this.bot.isMobile,
                     'SEARCH-BING-RELATED',
-                    `empty related terms | query="${query}"`
+                    `空相关术语 | 查询="${query}"`
                 )
             }
 
@@ -319,7 +324,7 @@ export class QueryCore {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'SEARCH-BING-RELATED',
-                `request failed | query="${query}" | error=${
+                `请求失败 | 查询="${query}" | 错误=${
                     error instanceof Error ? `${error.name}: ${error.message}\n${error.stack ?? ''}` : String(error)
                 }`
             )
@@ -353,7 +358,7 @@ export class QueryCore {
                 this.bot.logger.debug(
                     this.bot.isMobile,
                     'SEARCH-BING-TRENDING',
-                    `empty trending topics | lang=${langCode}`
+                    `空热门话题 | 语言=${langCode}`
                 )
             }
 
@@ -362,7 +367,7 @@ export class QueryCore {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'SEARCH-BING-TRENDING',
-                `request failed | lang=${langCode} | error=${
+                `请求失败 | 语言=${langCode} | 错误=${
                     error instanceof Error ? `${error.name}: ${error.message}\n${error.stack ?? ''}` : String(error)
                 }`
             )
@@ -394,7 +399,7 @@ export class QueryCore {
                 this.bot.logger.debug(
                     this.bot.isMobile,
                     'SEARCH-WIKIPEDIA-TRENDING',
-                    `empty wikipedia top | lang=${langCode}`
+                    `空维基百科热门 | 语言=${langCode}`
                 )
             }
 
@@ -403,7 +408,7 @@ export class QueryCore {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'SEARCH-WIKIPEDIA-TRENDING',
-                `request failed | lang=${langCode} | error=${
+                `请求失败 | 语言=${langCode} | 错误=${
                     error instanceof Error ? `${error.name}: ${error.message}\n${error.stack ?? ''}` : String(error)
                 }`
             )
@@ -431,7 +436,7 @@ export class QueryCore {
                 this.bot.logger.debug(
                     this.bot.isMobile,
                     'SEARCH-REDDIT-TRENDING',
-                    `empty reddit listing | subreddit=${safe}`
+                    `空Reddit列表 | 子版块=${safe}`
                 )
             }
 
@@ -440,7 +445,7 @@ export class QueryCore {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'SEARCH-REDDIT',
-                `request failed | subreddit=${subreddit} | error=${
+                `请求失败 | 子版块=${subreddit} | 错误=${
                     error instanceof Error ? `${error.name}: ${error.message}\n${error.stack ?? ''}` : String(error)
                 }`
             )
@@ -457,14 +462,14 @@ export class QueryCore {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'SEARCH-LOCAL-QUERY-LIST',
-                'local queries loaded | file=search-queries.json'
+                '本地查询已加载 | 文件=search-queries.json'
             )
 
             if (!out.length) {
                 this.bot.logger.debug(
                     this.bot.isMobile,
                     'SEARCH-LOCAL-QUERY-LIST',
-                    'search-queries.json parsed but empty or invalid'
+                    'search-queries.json 已解析但为空或无效'
                 )
             }
 
@@ -473,11 +478,72 @@ export class QueryCore {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'SEARCH-LOCAL-QUERY-LIST',
-                `read/parse failed | error=${
+                `读取/解析失败 | 错误=${
                     error instanceof Error ? `${error.name}: ${error.message}\n${error.stack ?? ''}` : String(error)
                 }`
             )
             return []
         }
+    }
+
+    /**
+     * 获取中国地区的热门搜索词（百度、抖音、微博等）
+     * @param geoLocale - 地理区域代码，默认为'CN'
+     * @returns Promise<GoogleSearch[]> - 包含主题和相关搜索词的数组
+     */
+    async getChinaTrends(geoLocale: string = 'CN'): Promise<string[]> {
+        const queryTerms: GoogleSearch[] = []
+        this.bot.logger.info(this.bot.isMobile, 'SEARCH-CHINA-TRENDS', `正在生成搜索查询，可能需要一些时间！ | 地理区域: ${geoLocale}`)
+        var appkey = "";//从https://www.gmya.net/api 网站申请的热门词接口APIKEY
+        var Hot_words_apis = "https://api.gmya.net/Api/";// 故梦热门词API接口网站
+        //{weibohot}微博热搜榜//{douyinhot}抖音热搜榜/{zhihuhot}知乎热搜榜/{baiduhot}百度热搜榜/{toutiaohot}今日头条热搜榜/
+        var keywords_source = ['BaiduHot', 'TouTiaoHot', 'DouYinHot', 'WeiBoHot'];
+        var random_keywords_source = keywords_source[Math.floor(Math.random() * keywords_source.length)];
+        var current_source_index = 0; // 当前搜索词来源的索引
+
+        while (current_source_index < keywords_source.length) {
+            // const source = keywords_source[current_source_index]; // 获取当前搜索词来源
+            const source = random_keywords_source; // 获取当前搜索词来源
+            let url;
+            //根据 appkey 是否为空来决定如何构建 URL地址,如果appkey为空,则直接请求接口地址
+            if (appkey) {
+                url = Hot_words_apis + source + "?format=json&appkey=" + appkey;//有appkey则添加appkey参数
+            } else {
+                url = Hot_words_apis + source;//无appkey则直接请求接口地址
+            }
+            try {
+                const response = await fetch(url); // 发起网络请求
+                if (!response.ok) {
+                    throw new Error('HTTP error! status: ' + response.status); // 如果响应状态不是OK，则抛出错误
+                }
+                this.bot.logger.info(this.bot.isMobile, 'SEARCH-CHINA-TRENDS', `已获取${source}搜索查询`)
+
+                const data = await response.json(); // 解析响应内容为JSON
+
+                // 显式指定 item 的类型为 any，解决隐式 any 类型的问题
+                if (data.data.some((item: any) => item)) {
+                    // 如果数据中存在有效项
+                    // 提取每个元素的title属性值
+                    const names = data.data.map((item: any) => item.title);
+                    // 显式指定 name 的类型为 string，解决隐式 any 类型的问题
+                    names.forEach((name: string) => {
+                        queryTerms.push({
+                            topic: name,
+                            related: []
+                        });
+                    });
+                    // 返回搜索到的title属性值列表
+                    return queryTerms.flatMap(x => [x.topic, ...x.related]);
+                }
+            } catch (error) {
+                // 当前来源请求失败，记录错误并尝试下一个来源
+                this.bot.logger.error(this.bot.isMobile, 'SEARCH-CHINA-TRENDS', `搜索词来源请求失败: ${error}`);
+            }
+            // 尝试下一个搜索词来源
+            current_source_index++;
+        }
+
+        return queryTerms.flatMap(x => [x.topic, ...x.related]);
+
     }
 }

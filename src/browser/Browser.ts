@@ -8,7 +8,7 @@ import { UserAgentManager } from './UserAgent'
 
 import type { Account, AccountProxy } from '../interface/Account'
 
-/* Test Stuff
+/* 测试相关
 https://abrahamjuliot.github.io/creepjs/
 https://botcheck.luminati.io/
 https://fv.pro/
@@ -23,28 +23,31 @@ interface BrowserCreationResult {
 
 class Browser {
     private readonly bot: MicrosoftRewardsBot
+    // 浏览器启动参数配置
     private static readonly BROWSER_ARGS = [
-        '--no-sandbox',
-        '--mute-audio',
-        '--disable-setuid-sandbox',
-        '--ignore-certificate-errors',
-        '--ignore-certificate-errors-spki-list',
-        '--ignore-ssl-errors',
-        '--no-first-run',
-        '--no-default-browser-check',
-        '--disable-user-media-security=true',
-        '--disable-blink-features=Attestation',
-        '--disable-features=WebAuthentication,PasswordManagerOnboarding,PasswordManager,EnablePasswordsAccountStorage,Passkeys',
-        '--disable-save-password-bubble'
+        '--no-sandbox', // 不使用沙盒模式
+        '--mute-audio', // 静音
+        '--disable-setuid-sandbox', // 禁用setuid沙盒
+        '--ignore-certificate-errors', // 忽略证书错误
+        '--ignore-certificate-errors-spki-list', // 忽略证书错误SPKI列表
+        '--ignore-ssl-errors', // 忽略SSL错误
+        '--no-first-run', // 不是首次运行
+        '--no-default-browser-check', // 不检查默认浏览器
+        '--disable-user-media-security=true', // 禁用用户媒体安全
+        '--disable-blink-features=Attestation', // 禁用Blink特性认证
+        '--disable-features=WebAuthentication,PasswordManagerOnboarding,PasswordManager,EnablePasswordsAccountStorage,Passkeys', // 禁用特定功能
+        '--disable-save-password-bubble' // 禁用保存密码提示
     ] as const
 
     constructor(bot: MicrosoftRewardsBot) {
         this.bot = bot
     }
 
+    // 创建浏览器实例
     async createBrowser(account: Account): Promise<BrowserCreationResult> {
         let browser: rebrowser.Browser
         try {
+            // 配置代理服务器
             const proxyConfig = account.proxy.url
                 ? {
                       server: this.formatProxyServer(account.proxy),
@@ -56,18 +59,20 @@ class Browser {
                   }
                 : undefined
 
+            // 启动浏览器
             browser = await rebrowser.chromium.launch({
-                headless: this.bot.config.headless,
-                ...(proxyConfig && { proxy: proxyConfig }),
-                args: [...Browser.BROWSER_ARGS]
+                headless: this.bot.config.headless, // 是否无头模式
+                ...(proxyConfig && { proxy: proxyConfig }), // 代理配置
+                args: [...Browser.BROWSER_ARGS] // 浏览器启动参数
             })
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error)
-            this.bot.logger.error(this.bot.isMobile, 'BROWSER', `Launch failed: ${errorMessage}`)
+            this.bot.logger.error(this.bot.isMobile, 'BROWSER', `启动失败: ${errorMessage}`)
             throw error
         }
 
         try {
+            // 加载会话数据
             const sessionData = await loadSessionData(
                 this.bot.config.sessionPath,
                 account.email,
@@ -75,10 +80,13 @@ class Browser {
                 this.bot.isMobile
             )
 
+            // 获取或生成浏览器指纹
             const fingerprint = sessionData.fingerprint ?? (await this.generateFingerprint(this.bot.isMobile))
 
+            // 创建带注入指纹的浏览器上下文
             const context = await newInjectedContext(browser as any, { fingerprint })
 
+            // 添加初始化脚本以禁用WebAuthn
             await context.addInitScript(() => {
                 Object.defineProperty(navigator, 'credentials', {
                     value: {
@@ -88,10 +96,13 @@ class Browser {
                 })
             })
 
+            // 设置默认超时时间
             context.setDefaultTimeout(this.bot.utils.stringToNumber(this.bot.config?.globalTimeout ?? 30000))
 
+            // 添加保存的cookies
             await context.addCookies(sessionData.cookies)
 
+            // 如果需要保存指纹数据
             if (
                 (account.saveFingerprint.mobile && this.bot.isMobile) ||
                 (account.saveFingerprint.desktop && !this.bot.isMobile)
@@ -99,20 +110,22 @@ class Browser {
                 await saveFingerprintData(this.bot.config.sessionPath, account.email, this.bot.isMobile, fingerprint)
             }
 
+            // 记录浏览器创建信息
             this.bot.logger.info(
                 this.bot.isMobile,
                 'BROWSER',
-                `Created browser with User-Agent: "${fingerprint.fingerprint.navigator.userAgent}"`
+                `创建浏览器，用户代理: "${fingerprint.fingerprint.navigator.userAgent}"`
             )
             this.bot.logger.debug(this.bot.isMobile, 'BROWSER-FINGERPRINT', JSON.stringify(fingerprint))
 
             return { context: context as unknown as BrowserContext, fingerprint }
         } catch (error) {
-            await browser.close().catch(() => {})
+            await browser.close().catch(() => {}) // 出错时关闭浏览器
             throw error
         }
     }
 
+    // 格式化代理服务器地址
     private formatProxyServer(proxy: AccountProxy): string {
         try {
             const urlObj = new URL(proxy.url)
@@ -123,13 +136,16 @@ class Browser {
         }
     }
 
+    // 生成浏览器指纹
     async generateFingerprint(isMobile: boolean) {
+        // 使用指纹生成器创建指纹数据
         const fingerPrintData = new FingerprintGenerator().getFingerprint({
-            devices: isMobile ? ['mobile'] : ['desktop'],
-            operatingSystems: isMobile ? ['android', 'ios'] : ['windows', 'linux'],
-            browsers: [{ name: 'edge' }]
+            devices: isMobile ? ['mobile'] : ['desktop'], // 根据是否为移动端选择设备类型
+            operatingSystems: isMobile ? ['android', 'ios'] : ['windows', 'linux'], // 根据是否为移动端选择操作系统
+            browsers: [{ name: 'edge' }] // 使用Edge浏览器
         })
 
+        // 更新用户代理
         const userAgentManager = new UserAgentManager(this.bot)
         const updatedFingerPrintData = await userAgentManager.updateFingerprintUserAgent(fingerPrintData, isMobile)
 

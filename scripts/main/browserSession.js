@@ -31,8 +31,8 @@ const { data: accounts } = loadAccounts(projectRoot, args.dev)
 
 const account = findAccountByEmail(accounts, args.email)
 if (!account) {
-    log('ERROR', `Account not found: ${args.email}`)
-    log('ERROR', 'Available accounts:')
+    log('ERROR', `未找到账户: ${args.email}`)
+    log('ERROR', '可用账户:')
     accounts.forEach(acc => {
         if (acc?.email) log('ERROR', `  - ${acc.email}`)
     })
@@ -43,16 +43,16 @@ async function main() {
     const runtimeBase = getRuntimeBase(projectRoot, args.dev)
     const sessionBase = getSessionPath(runtimeBase, config.sessionPath, args.email)
 
-    log('INFO', 'Validating session data...')
+    log('INFO', '验证会话数据...')
 
     if (!fs.existsSync(sessionBase)) {
-        log('ERROR', `Session directory does not exist: ${sessionBase}`)
-        log('ERROR', 'Please ensure the session has been created for this account')
+        log('ERROR', `会话目录不存在: ${sessionBase}`)
+        log('ERROR', '请确保此账户的会话已创建')
         process.exit(1)
     }
 
     if (!config.baseURL) {
-        log('ERROR', 'baseURL is not set in config.json')
+        log('ERROR', 'baseURL 在 config.json 中未设置')
         process.exit(1)
     }
 
@@ -60,18 +60,18 @@ async function main() {
     let sessionType = 'desktop'
 
     if (cookies.length === 0) {
-        log('WARN', 'No desktop session cookies found, trying mobile session...')
+        log('WARN', '未找到桌面会话 cookies，尝试移动会话...')
         cookies = await loadCookies(sessionBase, 'mobile')
         sessionType = 'mobile'
 
         if (cookies.length === 0) {
-            log('ERROR', 'No cookies found in desktop or mobile session')
-            log('ERROR', `Session directory: ${sessionBase}`)
-            log('ERROR', 'Please ensure a valid session exists for this account')
+            log('ERROR', '在桌面或移动会话中未找到 cookies')
+            log('ERROR', `会话目录: ${sessionBase}`)
+            log('ERROR', '请确保此账户存在有效会话')
             process.exit(1)
         }
 
-        log('INFO', `Using mobile session (${cookies.length} cookies)`)
+        log('INFO', `使用移动会话 (${cookies.length} 个 cookies)`)
     }
 
     const isMobile = sessionType === 'mobile'
@@ -81,32 +81,32 @@ async function main() {
     if (fingerprintEnabled) {
         fingerprint = await loadFingerprint(sessionBase, sessionType)
         if (!fingerprint) {
-            log('ERROR', `Fingerprint is enabled for ${sessionType} but fingerprint file not found`)
-            log('ERROR', `Expected file: ${sessionBase}/session_fingerprint_${sessionType}.json`)
-            log('ERROR', 'Cannot start browser without fingerprint when it is explicitly enabled')
+            log('ERROR', `${sessionType} 的指纹功能已启用但未找到指纹文件`)
+            log('ERROR', `预期文件: ${sessionBase}/session_fingerprint_${sessionType}.json`)
+            log('ERROR', '当明确启用指纹时，无法在没有指纹的情况下启动浏览器')
             process.exit(1)
         }
-        log('INFO', `Loaded ${sessionType} fingerprint`)
+        log('INFO', `已加载 ${sessionType} 指纹`)
     }
 
     const proxy = buildProxyConfig(account)
 
     if (account.proxy && account.proxy.url && (!proxy || !proxy.server)) {
-        log('ERROR', 'Proxy is configured in account but proxy data is invalid or incomplete')
-        log('ERROR', 'Account proxy config:', JSON.stringify(account.proxy, null, 2))
-        log('ERROR', 'Required fields: proxy.url, proxy.port')
-        log('ERROR', 'Cannot start browser without proxy when it is explicitly configured')
+        log('ERROR', '账户中配置了代理但代理数据无效或不完整')
+        log('ERROR', '账户代理配置:', JSON.stringify(account.proxy, null, 2))
+        log('ERROR', '必需字段: proxy.url, proxy.port')
+        log('ERROR', '当明确配置代理时，无法在没有代理的情况下启动浏览器')
         process.exit(1)
     }
 
     const userAgent = fingerprint?.fingerprint?.navigator?.userAgent || fingerprint?.fingerprint?.userAgent || null
 
-    log('INFO', `Session: ${args.email} (${sessionType})`)
+    log('INFO', `会话: ${args.email} (${sessionType})`)
     log('INFO', `  Cookies: ${cookies.length}`)
-    log('INFO', `  Fingerprint: ${fingerprint ? 'Yes' : 'No'}`)
-    log('INFO', `  User-Agent: ${userAgent || 'Default'}`)
-    log('INFO', `  Proxy: ${proxy ? 'Yes' : 'No'}`)
-    log('INFO', 'Launching browser...')
+    log('INFO', `  指纹: ${fingerprint ? '是' : '否'}`)
+    log('INFO', `  用户代理: ${userAgent || '默认'}`)
+    log('INFO', `  代理: ${proxy ? '是' : '否'}`)
+    log('INFO', '正在启动浏览器...')
 
     const browser = await chromium.launch({
         headless: false,
@@ -140,7 +140,7 @@ async function main() {
             })
         })
 
-        log('SUCCESS', 'Fingerprint injected into browser context')
+        log('SUCCESS', '指纹已注入到浏览器上下文中')
     } else {
         context = await browser.newContext({
             viewport: isMobile ? { width: 375, height: 667 } : { width: 1366, height: 768 }
@@ -149,14 +149,14 @@ async function main() {
 
     if (cookies.length) {
         await context.addCookies(cookies)
-        log('INFO', `Added ${cookies.length} cookies to context`)
+        log('INFO', `添加了 ${cookies.length} 个 cookies 到上下文`)
     }
 
     const page = await context.newPage()
     await page.goto(config.baseURL, { waitUntil: 'domcontentloaded' })
 
-    log('SUCCESS', 'Browser opened with session loaded')
-    log('INFO', `Navigated to: ${config.baseURL}`)
+    log('SUCCESS', '浏览器已打开并加载了会话')
+    log('INFO', `导航至: ${config.baseURL}`)
 
     setupCleanupHandlers(async () => {
         if (browser?.isConnected?.()) {

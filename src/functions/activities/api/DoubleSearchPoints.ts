@@ -16,7 +16,7 @@ export class DoubleSearchPoints extends Workers {
                 this.bot.logger.warn(
                     this.bot.isMobile,
                     'DOUBLE-SEARCH-POINTS',
-                    'Skipping: Request token not available, this activity requires it!'
+                    '跳过：请求令牌不可用，此活动需要它！'
                 )
                 return
             }
@@ -33,13 +33,13 @@ export class DoubleSearchPoints extends Workers {
             this.bot.logger.info(
                 this.bot.isMobile,
                 'DOUBLE-SEARCH-POINTS',
-                `Starting Double Search Points | offerId=${offerId}`
+                `开始双倍搜索积分 | offerId=${offerId}`
             )
 
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'DOUBLE-SEARCH-POINTS',
-                `Prepared headers | cookieLength=${this.cookieHeader.length} | fingerprintHeaderKeys=${Object.keys(this.fingerprintHeader).length}`
+                `准备好的头部信息 | cookie长度=${this.cookieHeader.length} | 指纹头部键=${Object.keys(this.fingerprintHeader).length}`
             )
 
             const formData = new URLSearchParams({
@@ -56,7 +56,7 @@ export class DoubleSearchPoints extends Workers {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'DOUBLE-SEARCH-POINTS',
-                `Prepared Double Search Points form data | offerId=${offerId} | hash=${promotion.hash} | timeZone=60 | activityAmount=1 | type=${activityType}`
+                `准备好的双倍搜索积分表单数据 | offerId=${offerId} | hash=${promotion.hash} | 时区=60 | 活动量=1 | 类型=${activityType}`
             )
 
             const request: AxiosRequestConfig = {
@@ -74,7 +74,7 @@ export class DoubleSearchPoints extends Workers {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'DOUBLE-SEARCH-POINTS',
-                `Sending Double Search Points request | offerId=${offerId} | url=${request.url}`
+                `发送双倍搜索积分请求 | offerId=${offerId} | url=${request.url}`
             )
 
             const response = await this.bot.axios.request(request)
@@ -82,7 +82,7 @@ export class DoubleSearchPoints extends Workers {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'DOUBLE-SEARCH-POINTS',
-                `Received Double Search Points response | offerId=${offerId} | status=${response.status}`
+                `收到双倍搜索积分响应 | offerId=${offerId} | 状态=${response.status}`
             )
 
             const data = await this.bot.browser.func.getDashboardData()
@@ -90,18 +90,18 @@ export class DoubleSearchPoints extends Workers {
                 item.name.toLowerCase().includes('ww_banner_optin_2x')
             )
 
-            // If OK, should no longer be presernt in promotionalItems
+            // 如果成功，不应再在促销项目中显示
             if (promotionalItem) {
                 this.bot.logger.warn(
                     this.bot.isMobile,
                     'DOUBLE-SEARCH-POINTS',
-                    `Unable to find or activate Double Search Points | offerId=${offerId} | status=${response.status}`
+                    `无法找到或激活双倍搜索积分 | offerId=${offerId} | 状态=${response.status}`
                 )
             } else {
                 this.bot.logger.info(
                     this.bot.isMobile,
                     'DOUBLE-SEARCH-POINTS',
-                    `Activated Double Search Points | offerId=${offerId} | status=${response.status}`,
+                    `已激活双倍搜索积分 | offerId=${offerId} | 状态=${response.status}`,
                     'green'
                 )
             }
@@ -109,7 +109,7 @@ export class DoubleSearchPoints extends Workers {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'DOUBLE-SEARCH-POINTS',
-                `Waiting after Double Search Points | offerId=${offerId}`
+                `双倍搜索积分后等待 | offerId=${offerId}`
             )
 
             await this.bot.utils.wait(this.bot.utils.randomDelay(5000, 10000))
@@ -117,7 +117,7 @@ export class DoubleSearchPoints extends Workers {
             this.bot.logger.error(
                 this.bot.isMobile,
                 'DOUBLE-SEARCH-POINTS',
-                `Error in doDoubleSearchPoints | offerId=${offerId} | message=${error instanceof Error ? error.message : String(error)}`
+                `doDoubleSearchPoints中出错 | offerId=${offerId} | 消息=${error instanceof Error ? error.message : String(error)}`
             )
         }
     }

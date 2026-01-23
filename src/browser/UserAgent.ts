@@ -58,10 +58,12 @@ export class UserAgentManager {
             this.bot.logger.error(
                 isMobile,
                 'USERAGENT-CHROME-VERSION',
-                `An error occurred: ${error instanceof Error ? error.message : String(error)}`
+                `发生错误: ${error instanceof Error ? error.message : String(error)}`
             )
-            throw error
+            // throw error
+            return '144.0.7559.96'
         }
+
     }
 
     async getEdgeVersions(isMobile: boolean) {
@@ -85,9 +87,13 @@ export class UserAgentManager {
             this.bot.logger.error(
                 isMobile,
                 'USERAGENT-EDGE-VERSION',
-                `An error occurred: ${error instanceof Error ? error.message : String(error)}`
+                `发生错误: ${error instanceof Error ? error.message : String(error)}`
             )
-            throw error
+            // throw error
+            return {
+                android: '144.0.3719.81',
+                windows: '144.0.3719.82'
+            }
         }
     }
 
@@ -156,7 +162,7 @@ export class UserAgentManager {
             this.bot.logger.error(
                 isMobile,
                 'USER-AGENT-UPDATE',
-                `An error occurred: ${error instanceof Error ? error.message : String(error)}`
+                `发生错误: ${error instanceof Error ? error.message : String(error)}`
             )
             throw error
         }

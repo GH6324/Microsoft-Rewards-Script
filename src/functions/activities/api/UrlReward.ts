@@ -16,7 +16,7 @@ export class UrlReward extends Workers {
             this.bot.logger.warn(
                 this.bot.isMobile,
                 'URL-REWARD',
-                'Skipping: Request token not available, this activity requires it!'
+                '跳过：请求令牌不可用，此活动需要它！'
             )
             return
         }
@@ -26,7 +26,7 @@ export class UrlReward extends Workers {
         this.bot.logger.info(
             this.bot.isMobile,
             'URL-REWARD',
-            `Starting UrlReward | offerId=${offerId} | geo=${this.bot.userData.geoLocale} | oldBalance=${this.oldBalance}`
+            `开始UrlReward | offerId=${offerId} | 地区=${this.bot.userData.geoLocale} | 旧余额=${this.oldBalance}`
         )
 
         try {
@@ -42,7 +42,7 @@ export class UrlReward extends Workers {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'URL-REWARD',
-                `Prepared UrlReward headers | offerId=${offerId} | cookieLength=${this.cookieHeader.length} | fingerprintHeaderKeys=${Object.keys(this.fingerprintHeader).length}`
+                `准备好的UrlReward头部 | offerId=${offerId} | cookie长度=${this.cookieHeader.length} | 指纹头部键=${Object.keys(this.fingerprintHeader).length}`
             )
 
             const formData = new URLSearchParams({
@@ -59,7 +59,7 @@ export class UrlReward extends Workers {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'URL-REWARD',
-                `Prepared UrlReward form data | offerId=${offerId} | hash=${promotion.hash} | timeZone=60 | activityAmount=1`
+                `准备好的UrlReward表单数据 | offerId=${offerId} | hash=${promotion.hash} | 时区=60 | 活动量=1`
             )
 
             const request: AxiosRequestConfig = {
@@ -77,7 +77,7 @@ export class UrlReward extends Workers {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'URL-REWARD',
-                `Sending UrlReward request | offerId=${offerId} | url=${request.url}`
+                `发送UrlReward请求 | offerId=${offerId} | url=${request.url}`
             )
 
             const response = await this.bot.axios.request(request)
@@ -85,7 +85,7 @@ export class UrlReward extends Workers {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'URL-REWARD',
-                `Received UrlReward response | offerId=${offerId} | status=${response.status}`
+                `收到UrlReward响应 | offerId=${offerId} | 状态=${response.status}`
             )
 
             const newBalance = await this.bot.browser.func.getCurrentPoints()
@@ -94,7 +94,7 @@ export class UrlReward extends Workers {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'URL-REWARD',
-                `Balance delta after UrlReward | offerId=${offerId} | oldBalance=${this.oldBalance} | newBalance=${newBalance} | gainedPoints=${this.gainedPoints}`
+                `UrlReward后的余额差额 | offerId=${offerId} | 旧余额=${this.oldBalance} | 新余额=${newBalance} | 获得积分=${this.gainedPoints}`
             )
 
             if (this.gainedPoints > 0) {
@@ -104,25 +104,25 @@ export class UrlReward extends Workers {
                 this.bot.logger.info(
                     this.bot.isMobile,
                     'URL-REWARD',
-                    `Completed UrlReward | offerId=${offerId} | status=${response.status} | gainedPoints=${this.gainedPoints} | newBalance=${newBalance}`,
+                    `完成UrlReward | offerId=${offerId} | 状态=${response.status} | 获得积分=${this.gainedPoints} | 新余额=${newBalance}`,
                     'green'
                 )
             } else {
                 this.bot.logger.warn(
                     this.bot.isMobile,
                     'URL-REWARD',
-                    `Failed UrlReward with no points | offerId=${offerId} | status=${response.status} | oldBalance=${this.oldBalance} | newBalance=${newBalance}`
+                    `UrlReward失败，没有积分 | offerId=${offerId} | 状态=${response.status} | 旧余额=${this.oldBalance} | 新余额=${newBalance}`
                 )
             }
 
-            this.bot.logger.debug(this.bot.isMobile, 'URL-REWARD', `Waiting after UrlReward | offerId=${offerId}`)
+            this.bot.logger.debug(this.bot.isMobile, 'URL-REWARD', `等待UrlReward后 | offerId=${offerId}`)
 
             await this.bot.utils.wait(this.bot.utils.randomDelay(5000, 10000))
         } catch (error) {
             this.bot.logger.error(
                 this.bot.isMobile,
                 'URL-REWARD',
-                `Error in doUrlReward | offerId=${promotion.offerId} | message=${error instanceof Error ? error.message : String(error)}`
+                `doUrlReward中出错 | offerId=${promotion.offerId} | 消息=${error instanceof Error ? error.message : String(error)}`
             )
         }
     }

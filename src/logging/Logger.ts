@@ -1,5 +1,7 @@
 import chalk from 'chalk'
 import cluster from 'cluster'
+import fs from 'fs'
+import path from 'path'
 import { sendDiscord } from './Discord'
 import { sendNtfy } from './Ntfy'
 import type { MicrosoftRewardsBot } from '../index'
@@ -17,11 +19,11 @@ export interface IpcLog {
 type ChalkFn = (msg: string) => string
 
 function platformText(platform: Platform): string {
-    return platform === 'main' ? 'MAIN' : platform ? 'MOBILE' : 'DESKTOP'
+    return platform === 'main' ? '主进程' : platform ? '移动端' : '桌面端'
 }
 
 function platformBadge(platform: Platform): string {
-    return platform === 'main' ? chalk.bgCyan('MAIN') : platform ? chalk.bgBlue('MOBILE') : chalk.bgMagenta('DESKTOP')
+    return platform === 'main' ? chalk.bgCyan('主进程') : platform ? chalk.bgBlue('移动端') : chalk.bgMagenta('桌面端')
 }
 
 function getColorFn(color?: ColorKey): ChalkFn | null {
@@ -42,6 +44,41 @@ function consoleOut(level: LogLevel, msg: string, chalkFn: ChalkFn | null): void
 
 function formatMessage(message: string | Error): string {
     return message instanceof Error ? `${message.message}\n${message.stack || ''}` : message
+}
+
+/**
+ * 确保日志目录存在
+ */
+function ensureLogDirectory(): string {
+    const logDir = path.join(process.cwd(), 'logs')
+    if (!fs.existsSync(logDir)) {
+        fs.mkdirSync(logDir, { recursive: true })
+    }
+    return logDir
+}
+
+/**
+ * 获取当前日期的日志文件路径
+ */
+function getLogFilePath(): string {
+    const logDir = ensureLogDirectory()
+    const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD格式
+    return path.join(logDir, `${today}.log`)
+}
+
+/**
+ * 将日志写入文件
+ */
+function writeLogToFile(logContent: string): void {
+    try {
+        const logFilePath = getLogFilePath()
+        const timestamp = new Date().toISOString()
+        const logEntry = `${timestamp} ${logContent}\n`
+
+        fs.appendFileSync(logFilePath, logEntry, 'utf8')
+    } catch (error) {
+        console.error('[Logger] 写入日志文件失败:', error)
+    }
 }
 
 export class Logger {
@@ -73,7 +110,7 @@ export class Logger {
         const now = new Date().toLocaleString()
         const formatted = formatMessage(message)
 
-        const userName = this.bot.userData.userName ? this.bot.userData.userName : 'MAIN'
+        const userName = this.bot.userData.userName ? this.bot.userData.userName : '主进程'
 
         const levelTag = level.toUpperCase()
         const cleanMsg = `[${now}] [${userName}] [${levelTag}] ${platformText(isMobile)} [${title}] ${formatted}`
@@ -83,6 +120,9 @@ export class Logger {
         if (level === 'debug' && !config.debugLogs && !process.argv.includes('-dev')) {
             return
         }
+
+        // 保存日志到本地文件
+        writeLogToFile(cleanMsg)
 
         const badge = platformBadge(isMobile)
         const consoleStr = `[${now}] [${userName}] [${levelTag}] ${badge} [${title}] ${formatted}`
@@ -138,12 +178,12 @@ export class Logger {
     }
 
     private shouldPassFilter(filter: LogFilter | undefined, level: LogLevel, message: string): boolean {
-        // If disabled or not, let all logs pass
+        // 如果禁用或未设置，则允许所有日志通过
         if (!filter || !filter.enabled) {
             return true
         }
 
-        // Always log error levelo logs, remove these lines to disable this!
+        // 始终记录错误级别的日志，删除这些行可禁用此功能！
         if (level === 'error') {
             return true
         }

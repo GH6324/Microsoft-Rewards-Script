@@ -42,56 +42,56 @@ export class RecoveryLogin {
 
     async handle(page: Page, recoveryEmail: string): Promise<void> {
         try {
-            this.bot.logger.info(this.bot.isMobile, 'LOGIN-RECOVERY', 'Email recovery authentication flow initiated')
+            this.bot.logger.info(this.bot.isMobile, 'LOGIN-RECOVERY', '邮箱恢复身份验证流程已启动')
 
             if (recoveryEmail) {
                 this.bot.logger.info(
                     this.bot.isMobile,
                     'LOGIN-RECOVERY',
-                    `Using provided recovery email: ${recoveryEmail}`
+                    `使用提供的恢复邮箱: ${recoveryEmail}`
                 )
 
                 const filled = await this.fillEmail(page, recoveryEmail)
                 if (!filled) {
-                    throw new Error('Email input field not found')
+                    throw new Error('未找到邮箱输入字段')
                 }
 
-                this.bot.logger.info(this.bot.isMobile, 'LOGIN-RECOVERY', 'Waiting for page response')
+                this.bot.logger.info(this.bot.isMobile, 'LOGIN-RECOVERY', '等待页面响应')
                 await this.bot.utils.wait(500)
                 await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {
-                    this.bot.logger.debug(this.bot.isMobile, 'LOGIN-RECOVERY', 'Network idle timeout reached')
+                    this.bot.logger.debug(this.bot.isMobile, 'LOGIN-RECOVERY', '网络空闲超时到达')
                 })
 
                 const errorMessage = await getErrorMessage(page)
                 if (errorMessage) {
-                    throw new Error(`Email verification failed: ${errorMessage}`)
+                    throw new Error(`邮箱验证失败: ${errorMessage}`)
                 }
 
-                this.bot.logger.info(this.bot.isMobile, 'LOGIN-RECOVERY', 'Email authentication completed successfully')
+                this.bot.logger.info(this.bot.isMobile, 'LOGIN-RECOVERY', '邮箱身份验证成功完成')
                 return
             }
 
             this.bot.logger.info(
                 this.bot.isMobile,
                 'LOGIN-RECOVERY',
-                'No recovery email provided, will prompt user for input'
+                '未提供恢复邮箱，将提示用户输入'
             )
 
             for (let attempt = 1; attempt <= this.maxManualAttempts; attempt++) {
                 this.bot.logger.info(
                     this.bot.isMobile,
                     'LOGIN-RECOVERY',
-                    `Starting attempt ${attempt}/${this.maxManualAttempts}`
+                    `开始尝试 ${attempt}/${this.maxManualAttempts}`
                 )
 
                 this.bot.logger.info(
                     this.bot.isMobile,
                     'LOGIN-RECOVERY',
-                    `Prompting user for email input (timeout: ${this.maxManualSeconds}s)`
+                    `提示用户输入邮箱 (超时: ${this.maxManualSeconds}秒)`
                 )
 
                 const email = await promptInput({
-                    question: `Recovery email (waiting ${this.maxManualSeconds}s): `,
+                    question: `恢复邮箱 (等待 ${this.maxManualSeconds}秒): `,
                     timeoutSeconds: this.maxManualSeconds,
                     validate: email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
                 })
@@ -100,11 +100,11 @@ export class RecoveryLogin {
                     this.bot.logger.warn(
                         this.bot.isMobile,
                         'LOGIN-RECOVERY',
-                        `No or invalid email input received (attempt ${attempt}/${this.maxManualAttempts})`
+                        `未收到或收到无效邮箱输入 (尝试 ${attempt}/${this.maxManualAttempts})`
                     )
 
                     if (attempt === this.maxManualAttempts) {
-                        throw new Error('Manual email input failed: no input received')
+                        throw new Error('手动邮箱输入失败: 未收到输入')
                     }
                     continue
                 }
@@ -113,37 +113,37 @@ export class RecoveryLogin {
                     this.bot.logger.warn(
                         this.bot.isMobile,
                         'LOGIN-RECOVERY',
-                        `Invalid email format received (attempt ${attempt}/${this.maxManualAttempts}) | length=${email.length}`
+                        `收到无效邮箱格式 (尝试 ${attempt}/${this.maxManualAttempts}) | 长度=${email.length}`
                     )
 
                     if (attempt === this.maxManualAttempts) {
-                        throw new Error('Manual email input failed: invalid format')
+                        throw new Error('手动邮箱输入失败: 格式无效')
                     }
                     continue
                 }
 
-                this.bot.logger.info(this.bot.isMobile, 'LOGIN-RECOVERY', `Valid email received from user: ${email}`)
+                this.bot.logger.info(this.bot.isMobile, 'LOGIN-RECOVERY', `从用户收到有效邮箱: ${email}`)
 
                 const filled = await this.fillEmail(page, email)
                 if (!filled) {
                     this.bot.logger.error(
                         this.bot.isMobile,
                         'LOGIN-RECOVERY',
-                        `Failed to fill email input field (attempt ${attempt}/${this.maxManualAttempts})`
+                        `无法填写邮箱输入字段 (尝试 ${attempt}/${this.maxManualAttempts})`
                     )
 
                     if (attempt === this.maxManualAttempts) {
-                        throw new Error('Email input field not found after maximum attempts')
+                        throw new Error('最大尝试次数后未找到邮箱输入字段')
                     }
 
                     await this.bot.utils.wait(1000)
                     continue
                 }
 
-                this.bot.logger.info(this.bot.isMobile, 'LOGIN-RECOVERY', 'Waiting for page response')
+                this.bot.logger.info(this.bot.isMobile, 'LOGIN-RECOVERY', '等待页面响应')
                 await this.bot.utils.wait(500)
                 await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {
-                    this.bot.logger.debug(this.bot.isMobile, 'LOGIN-RECOVERY', 'Network idle timeout reached')
+                    this.bot.logger.debug(this.bot.isMobile, 'LOGIN-RECOVERY', '网络空闲超时到达')
                 })
 
                 const errorMessage = await getErrorMessage(page)
@@ -151,36 +151,36 @@ export class RecoveryLogin {
                     this.bot.logger.warn(
                         this.bot.isMobile,
                         'LOGIN-RECOVERY',
-                        `Error from page: "${errorMessage}" (attempt ${attempt}/${this.maxManualAttempts})`
+                        `页面错误: "${errorMessage}" (尝试 ${attempt}/${this.maxManualAttempts})`
                     )
 
                     if (attempt === this.maxManualAttempts) {
-                        throw new Error(`Maximum attempts reached. Last error: ${errorMessage}`)
+                        throw new Error(`达到最大尝试次数。最后错误: ${errorMessage}`)
                     }
 
-                    this.bot.logger.info(this.bot.isMobile, 'LOGIN-RECOVERY', 'Clearing input field for retry')
+                    this.bot.logger.info(this.bot.isMobile, 'LOGIN-RECOVERY', '清除输入字段以重试')
                     const inputToClear = await page.$(this.textInputSelector).catch(() => null)
                     if (inputToClear) {
                         await inputToClear.click()
                         await page.keyboard.press('Control+A')
                         await page.keyboard.press('Backspace')
-                        this.bot.logger.info(this.bot.isMobile, 'LOGIN-RECOVERY', 'Input field cleared')
+                        this.bot.logger.info(this.bot.isMobile, 'LOGIN-RECOVERY', '输入字段已清除')
                     } else {
-                        this.bot.logger.warn(this.bot.isMobile, 'LOGIN-RECOVERY', 'Could not find input field to clear')
+                        this.bot.logger.warn(this.bot.isMobile, 'LOGIN-RECOVERY', '找不到要清除的输入字段')
                     }
 
                     await this.bot.utils.wait(1000)
                     continue
                 }
 
-                this.bot.logger.info(this.bot.isMobile, 'LOGIN-RECOVERY', 'Email authentication completed successfully')
+                this.bot.logger.info(this.bot.isMobile, 'LOGIN-RECOVERY', '邮箱身份验证成功完成')
                 return
             }
 
-            throw new Error(`Email input failed after ${this.maxManualAttempts} attempts`)
+            throw new Error(`邮箱输入在 ${this.maxManualAttempts} 次尝试后失败`)
         } catch (error) {
             const errorMsg = error instanceof Error ? error.message : String(error)
-            this.bot.logger.error(this.bot.isMobile, 'LOGIN-RECOVERY', `Fatal error: ${errorMsg}`)
+            this.bot.logger.error(this.bot.isMobile, 'LOGIN-RECOVERY', `致命错误: ${errorMsg}`)
             throw error
         }
     }

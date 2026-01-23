@@ -16,7 +16,7 @@ const discordQueue = new PQueue({
 })
 
 function truncate(text: string) {
-    return text.length <= DISCORD_LIMIT ? text : text.slice(0, DISCORD_LIMIT - 14) + ' …(truncated)'
+    return text.length <= DISCORD_LIMIT ? text : text.slice(0, DISCORD_LIMIT - 14) + ' …(已截断)'
 }
 
 export async function sendDiscord(discordUrl: string, content: string, level: LogLevel): Promise<void> {

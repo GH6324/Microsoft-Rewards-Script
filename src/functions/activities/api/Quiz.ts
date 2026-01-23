@@ -19,7 +19,7 @@ export class Quiz extends Workers {
         this.bot.logger.info(
             this.bot.isMobile,
             'QUIZ',
-            `Starting quiz | offerId=${offerId} | pointProgressMax=${promotion.pointProgressMax} | activityProgressMax=${promotion.activityProgressMax} | currentPoints=${startBalance}`
+            `开始测验 | offerId=${offerId} | 最大点数进度=${promotion.pointProgressMax} | 最大活动进度=${promotion.activityProgressMax} | 当前积分=${startBalance}`
         )
 
         try {
@@ -35,22 +35,22 @@ export class Quiz extends Workers {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'QUIZ',
-                `Prepared quiz headers | offerId=${offerId} | cookieLength=${this.cookieHeader.length} | fingerprintHeaderKeys=${Object.keys(this.fingerprintHeader).length}`
+                `准备好的测验头部 | offerId=${offerId} | cookie长度=${this.cookieHeader.length} | 指纹头部键=${Object.keys(this.fingerprintHeader).length}`
             )
 
-            // 8-question quiz
+            // 8题测验
             if (promotion.activityProgressMax === 80) {
                 this.bot.logger.warn(
                     this.bot.isMobile,
                     'QUIZ',
-                    `Detected 8-question quiz (activityProgressMax=80), marking as completed | offerId=${offerId}`
+                    `检测到8题测验 (activityProgressMax=80)，标记为已完成 | offerId=${offerId}`
                 )
 
-                // Not implemented
+                // 未实现
                 return
             }
 
-            //Standard points quizzes (20/30/40/50 max)
+            // 标准积分测验 (20/30/40/50 最大值)
             if ([20, 30, 40, 50].includes(promotion.pointProgressMax)) {
                 let oldBalance = startBalance
                 let gainedPoints = 0
@@ -61,7 +61,7 @@ export class Quiz extends Workers {
                 this.bot.logger.debug(
                     this.bot.isMobile,
                     'QUIZ',
-                    `Starting ReportActivity loop | offerId=${offerId} | maxAttempts=${maxAttempts} | startingBalance=${oldBalance}`
+                    `开始ReportActivity循环 | offerId=${offerId} | 最大尝试次数=${maxAttempts} | 起始余额=${oldBalance}`
                 )
 
                 for (let i = 0; i < maxAttempts; i++) {
@@ -88,7 +88,7 @@ export class Quiz extends Workers {
                         this.bot.logger.debug(
                             this.bot.isMobile,
                             'QUIZ',
-                            `Sending ReportActivity request | attempt=${i + 1}/${maxAttempts} | offerId=${offerId} | url=${request.url}`
+                            `发送ReportActivity请求 | 尝试=${i + 1}/${maxAttempts} | offerId=${offerId} | url=${request.url}`
                         )
 
                         const response = await this.bot.axios.request(request)
@@ -96,7 +96,7 @@ export class Quiz extends Workers {
                         this.bot.logger.debug(
                             this.bot.isMobile,
                             'QUIZ',
-                            `Received ReportActivity response | attempt=${i + 1}/${maxAttempts} | offerId=${offerId} | status=${response.status}`
+                            `收到ReportActivity响应 | 尝试=${i + 1}/${maxAttempts} | offerId=${offerId} | 状态=${response.status}`
                         )
 
                         const newBalance = await this.bot.browser.func.getCurrentPoints()
@@ -105,7 +105,7 @@ export class Quiz extends Workers {
                         this.bot.logger.debug(
                             this.bot.isMobile,
                             'QUIZ',
-                            `Balance delta after ReportActivity | attempt=${i + 1}/${maxAttempts} | offerId=${offerId} | oldBalance=${oldBalance} | newBalance=${newBalance} | gainedPoints=${gainedPoints}`
+                            `ReportActivity后的余额差额 | 尝试=${i + 1}/${maxAttempts} | offerId=${offerId} | 旧余额=${oldBalance} | 新余额=${newBalance} | 获得积分=${gainedPoints}`
                         )
 
                         attempts = i + 1
@@ -121,14 +121,14 @@ export class Quiz extends Workers {
                             this.bot.logger.info(
                                 this.bot.isMobile,
                                 'QUIZ',
-                                `ReportActivity ${i + 1} → ${response.status} | offerId=${offerId} | gainedPoints=${gainedPoints} | newBalance=${newBalance}`,
+                                `ReportActivity ${i + 1} → ${response.status} | offerId=${offerId} | 获得积分=${gainedPoints} | 新余额=${newBalance}`,
                                 'green'
                             )
                         } else {
                             this.bot.logger.warn(
                                 this.bot.isMobile,
                                 'QUIZ',
-                                `ReportActivity ${i + 1} | offerId=${offerId} | no more points gained, ending quiz | lastBalance=${newBalance}`
+                                `ReportActivity ${i + 1} | offerId=${offerId} | 没有获得更多积分，结束测验 | 最后余额=${newBalance}`
                             )
                             break
                         }
@@ -136,7 +136,7 @@ export class Quiz extends Workers {
                         this.bot.logger.debug(
                             this.bot.isMobile,
                             'QUIZ',
-                            `Waiting between ReportActivity attempts | attempt=${i + 1}/${maxAttempts} | offerId=${offerId}`
+                            `ReportActivity尝试之间等待 | 尝试=${i + 1}/${maxAttempts} | offerId=${offerId}`
                         )
 
                         await this.bot.utils.wait(this.bot.utils.randomDelay(5000, 7000))
@@ -144,7 +144,7 @@ export class Quiz extends Workers {
                         this.bot.logger.error(
                             this.bot.isMobile,
                             'QUIZ',
-                            `Error during ReportActivity | attempt=${i + 1}/${maxAttempts} | offerId=${offerId} | message=${error instanceof Error ? error.message : String(error)}`
+                            `ReportActivity期间出错 | 尝试=${i + 1}/${maxAttempts} | offerId=${offerId} | 消息=${error instanceof Error ? error.message : String(error)}`
                         )
                         break
                     }
@@ -153,20 +153,20 @@ export class Quiz extends Workers {
                 this.bot.logger.info(
                     this.bot.isMobile,
                     'QUIZ',
-                    `Completed the quiz successfully | offerId=${offerId} | attempts=${attempts} | totalGained=${totalGained} | startBalance=${startBalance} | finalBalance=${this.bot.userData.currentPoints}`
+                    `成功完成测验 | offerId=${offerId} | 尝试次数=${attempts} | 总获得=${totalGained} | 起始余额=${startBalance} | 最终余额=${this.bot.userData.currentPoints}`
                 )
             } else {
                 this.bot.logger.warn(
                     this.bot.isMobile,
                     'QUIZ',
-                    `Unsupported quiz configuration | offerId=${offerId} | pointProgressMax=${promotion.pointProgressMax} | activityProgressMax=${promotion.activityProgressMax}`
+                    `不支持的测验配置 | offerId=${offerId} | pointProgressMax=${promotion.pointProgressMax} | activityProgressMax=${promotion.activityProgressMax}`
                 )
             }
         } catch (error) {
             this.bot.logger.error(
                 this.bot.isMobile,
                 'QUIZ',
-                `Error in doQuiz | offerId=${promotion.offerId} | message=${error instanceof Error ? error.message : String(error)}`
+                `doQuiz中出错 | offerId=${promotion.offerId} | 消息=${error instanceof Error ? error.message : String(error)}`
             )
         }
     }

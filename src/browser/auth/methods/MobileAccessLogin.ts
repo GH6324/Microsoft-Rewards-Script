@@ -37,12 +37,12 @@ export class MobileAccessLogin {
             const hasPasskeyError = await this.checkSelector(this.selectors.passKeyError)
             const hasPasskeyVideo = await this.checkSelector(this.selectors.passKeyVideo)
             if (hasPasskeyError || hasPasskeyVideo) {
-                this.bot.logger.info(this.bot.isMobile, 'LOGIN-APP', 'Found Passkey prompt on OAuth page, skipping')
+                this.bot.logger.info(this.bot.isMobile, 'LOGIN-APP', '在OAuth页面上发现Passkey提示，跳过')
                 await this.bot.browser.utils.ghostClick(this.page, this.selectors.secondaryButton)
                 await this.page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {})
             }
         } catch {
-            // Ignore errors in prompt handling
+            // 忽略提示处理中的错误
         }
     }
 
@@ -60,22 +60,22 @@ export class MobileAccessLogin {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'LOGIN-APP',
-                `Auth URL constructed: ${authorizeUrl.origin}${authorizeUrl.pathname}`
+                `认证URL构建完成: ${authorizeUrl.origin}${authorizeUrl.pathname}`
             )
 
             await this.bot.browser.utils.disableFido(this.page)
 
-            this.bot.logger.debug(this.bot.isMobile, 'LOGIN-APP', 'Navigating to OAuth authorize URL')
+            this.bot.logger.debug(this.bot.isMobile, 'LOGIN-APP', '导航到OAuth授权URL')
 
             await this.page.goto(authorizeUrl.href).catch(err => {
                 this.bot.logger.debug(
                     this.bot.isMobile,
                     'LOGIN-APP',
-                    `page.goto() failed: ${err instanceof Error ? err.message : String(err)}`
+                    `page.goto() 失败: ${err instanceof Error ? err.message : String(err)}`
                 )
             })
 
-            this.bot.logger.info(this.bot.isMobile, 'LOGIN-APP', 'Waiting for mobile OAuth code...')
+            this.bot.logger.info(this.bot.isMobile, 'LOGIN-APP', '等待移动OAuth代码...')
 
             const start = Date.now()
             let code = ''
@@ -84,9 +84,9 @@ export class MobileAccessLogin {
             while (Date.now() - start < this.maxTimeout) {
                 const currentUrl = this.page.url()
 
-                // Log only when URL changes (high signal, no spam)
+                // 仅在URL更改时记录（高信号，无垃圾信息）
                 if (currentUrl !== lastUrl) {
-                    this.bot.logger.debug(this.bot.isMobile, 'LOGIN-APP', `OAuth poll URL changed → ${currentUrl}`)
+                    this.bot.logger.debug(this.bot.isMobile, 'LOGIN-APP', `OAuth轮询URL已更改 → ${currentUrl}`)
                     lastUrl = currentUrl
                 }
 
@@ -97,18 +97,18 @@ export class MobileAccessLogin {
                         code = url.searchParams.get('code') || ''
 
                         if (code) {
-                            this.bot.logger.debug(this.bot.isMobile, 'LOGIN-APP', 'OAuth code detected in redirect URL')
+                            this.bot.logger.debug(this.bot.isMobile, 'LOGIN-APP', '在重定向URL中检测到OAuth代码')
                             break
                         }
                     }
 
-                    // Handle Passkey prompt if it appears
+                    // 如果出现Passkey提示则处理
                     await this.handlePasskeyPrompt()
                 } catch (err) {
                     this.bot.logger.debug(
                         this.bot.isMobile,
                         'LOGIN-APP',
-                        `Invalid URL while polling: ${String(currentUrl)}`
+                        `轮询期间URL无效: ${String(currentUrl)}`
                     )
                 }
 
@@ -119,10 +119,10 @@ export class MobileAccessLogin {
                 this.bot.logger.warn(
                     this.bot.isMobile,
                     'LOGIN-APP',
-                    `Timed out waiting for OAuth code after ${Math.round((Date.now() - start) / 1000)}s`
+                    `等待OAuth代码超时，已等待 ${Math.round((Date.now() - start) / 1000)}秒`
                 )
 
-                this.bot.logger.debug(this.bot.isMobile, 'LOGIN-APP', `Final page URL: ${this.page.url()}`)
+                this.bot.logger.debug(this.bot.isMobile, 'LOGIN-APP', `最终页面URL: ${this.page.url()}`)
 
                 return ''
             }
@@ -133,7 +133,7 @@ export class MobileAccessLogin {
             data.append('code', code)
             data.append('redirect_uri', this.redirectUrl)
 
-            this.bot.logger.debug(this.bot.isMobile, 'LOGIN-APP', 'Exchanging OAuth code for access token')
+            this.bot.logger.debug(this.bot.isMobile, 'LOGIN-APP', '交换OAuth代码以获取访问令牌')
 
             const response = await this.bot.axios.request({
                 url: this.tokenUrl,
@@ -145,26 +145,26 @@ export class MobileAccessLogin {
             const token = (response?.data?.access_token as string) ?? ''
 
             if (!token) {
-                this.bot.logger.warn(this.bot.isMobile, 'LOGIN-APP', 'No access_token in token response')
+                this.bot.logger.warn(this.bot.isMobile, 'LOGIN-APP', '令牌响应中没有access_token')
                 this.bot.logger.debug(
                     this.bot.isMobile,
                     'LOGIN-APP',
-                    `Token response payload: ${JSON.stringify(response?.data)}`
+                    `令牌响应负载: ${JSON.stringify(response?.data)}`
                 )
                 return ''
             }
 
-            this.bot.logger.info(this.bot.isMobile, 'LOGIN-APP', 'Mobile access token received')
+            this.bot.logger.info(this.bot.isMobile, 'LOGIN-APP', '移动访问令牌已接收')
             return token
         } catch (error) {
             this.bot.logger.error(
                 this.bot.isMobile,
                 'LOGIN-APP',
-                `MobileAccess error: ${error instanceof Error ? error.stack || error.message : String(error)}`
+                `MobileAccess错误: ${error instanceof Error ? error.stack || error.message : String(error)}`
             )
             return ''
         } finally {
-            this.bot.logger.debug(this.bot.isMobile, 'LOGIN-APP', 'Returning to base URL')
+            this.bot.logger.debug(this.bot.isMobile, 'LOGIN-APP', '返回基础URL')
             await this.page.goto(this.bot.config.baseURL, { timeout: 10000 }).catch(() => {})
         }
     }

@@ -43,18 +43,18 @@ export class CodeLogin {
 
     async handle(page: Page): Promise<void> {
         try {
-            this.bot.logger.info(this.bot.isMobile, 'LOGIN-CODE', 'Code login authentication requested')
+            this.bot.logger.info(this.bot.isMobile, 'LOGIN-CODE', '请求代码登录身份验证')
 
             const emailMessage = await getSubtitleMessage(page)
             if (emailMessage) {
-                this.bot.logger.info(this.bot.isMobile, 'LOGIN-CODE', `Page message: "${emailMessage}"`)
+                this.bot.logger.info(this.bot.isMobile, 'LOGIN-CODE', `页面消息: "${emailMessage}"`)
             } else {
-                this.bot.logger.warn(this.bot.isMobile, 'LOGIN-CODE', 'Unable to retrieve email code destination')
+                this.bot.logger.warn(this.bot.isMobile, 'LOGIN-CODE', '无法检索邮件代码目的地')
             }
 
             for (let attempt = 1; attempt <= this.maxManualAttempts; attempt++) {
                 const code = await promptInput({
-                    question: `Enter the 6-digit code (waiting ${this.maxManualSeconds}s): `,
+                    question: `输入6位代码 (等待 ${this.maxManualSeconds}秒): `,
                     timeoutSeconds: this.maxManualSeconds,
                     validate: code => /^\d{6}$/.test(code)
                 })
@@ -63,11 +63,11 @@ export class CodeLogin {
                     this.bot.logger.warn(
                         this.bot.isMobile,
                         'LOGIN-CODE',
-                        `Invalid or missing code (attempt ${attempt}/${this.maxManualAttempts}) | input length=${code?.length}`
+                        `无效或缺少代码 (尝试 ${attempt}/${this.maxManualAttempts}) | 输入长度=${code?.length}`
                     )
 
                     if (attempt === this.maxManualAttempts) {
-                        throw new Error('Manual code input failed or timed out')
+                        throw new Error('手动代码输入失败或超时')
                     }
                     continue
                 }
@@ -77,11 +77,11 @@ export class CodeLogin {
                     this.bot.logger.error(
                         this.bot.isMobile,
                         'LOGIN-CODE',
-                        `Unable to fill code input (attempt ${attempt}/${this.maxManualAttempts})`
+                        `无法填写代码输入 (尝试 ${attempt}/${this.maxManualAttempts})`
                     )
 
                     if (attempt === this.maxManualAttempts) {
-                        throw new Error('Code input field not found')
+                        throw new Error('未找到代码输入字段')
                     }
                     continue
                 }
@@ -89,20 +89,20 @@ export class CodeLogin {
                 await this.bot.utils.wait(500)
                 await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {})
 
-                // Check if wrong code was entered
+                // 检查是否输入了错误代码
                 const errorMessage = await getErrorMessage(page)
                 if (errorMessage) {
                     this.bot.logger.warn(
                         this.bot.isMobile,
                         'LOGIN-CODE',
-                        `Incorrect code: ${errorMessage} (attempt ${attempt}/${this.maxManualAttempts})`
+                        `代码不正确: ${errorMessage} (尝试 ${attempt}/${this.maxManualAttempts})`
                     )
 
                     if (attempt === this.maxManualAttempts) {
-                        throw new Error(`Maximum attempts reached: ${errorMessage}`)
+                        throw new Error(`达到最大尝试次数: ${errorMessage}`)
                     }
 
-                    // Clear the input field before retrying
+                    // 重试前清除输入字段
                     const inputToClear = await page.$(this.textInputSelector).catch(() => null)
                     if (inputToClear) {
                         await inputToClear.click()
@@ -112,16 +112,16 @@ export class CodeLogin {
                     continue
                 }
 
-                this.bot.logger.info(this.bot.isMobile, 'LOGIN-CODE', 'Code authentication completed successfully')
+                this.bot.logger.info(this.bot.isMobile, 'LOGIN-CODE', '代码身份验证成功完成')
                 return
             }
 
-            throw new Error(`Code input failed after ${this.maxManualAttempts} attempts`)
+            throw new Error(`代码输入在 ${this.maxManualAttempts} 次尝试后失败`)
         } catch (error) {
             this.bot.logger.error(
                 this.bot.isMobile,
                 'LOGIN-CODE',
-                `Error occurred: ${error instanceof Error ? error.message : String(error)}`
+                `发生错误: ${error instanceof Error ? error.message : String(error)}`
             )
             throw error
         }

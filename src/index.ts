@@ -69,68 +69,72 @@ interface UserData {
     gainedPoints: number
 }
 
+// 主要的微软奖励机器人类，负责协调整个积分收集过程
 export class MicrosoftRewardsBot {
-    public logger: Logger
-    public config
-    public utils: Utils
-    public activities: Activities = new Activities(this)
-    public browser: { func: BrowserFunc; utils: BrowserUtils }
+    public logger: Logger // 日志记录器
+    public config // 配置对象
+    public utils: Utils // 工具类实例
+    public activities: Activities = new Activities(this) // 活动管理器
+    public browser: { func: BrowserFunc; utils: BrowserUtils } // 浏览器功能和工具
 
-    public mainMobilePage!: Page
-    public mainDesktopPage!: Page
+    public mainMobilePage!: Page // 主要的移动端页面
+    public mainDesktopPage!: Page // 主要的桌面端页面
 
-    public userData: UserData
+    public userData: UserData // 用户数据
 
-    public accessToken = ''
-    public requestToken = ''
-    public cookies: { mobile: Cookie[]; desktop: Cookie[] }
-    public fingerprint!: BrowserFingerprintWithHeaders
+    public accessToken = '' // 访问令牌
+    public requestToken = '' // 请求令牌
+    public cookies: { mobile: Cookie[]; desktop: Cookie[] } // 移动端和桌面端的cookies
+    public fingerprint!: BrowserFingerprintWithHeaders // 浏览器指纹
 
-    private pointsCanCollect = 0
+    private pointsCanCollect = 0 // 可收集的积分
 
-    private activeWorkers: number
-    private exitedWorkers: number[]
-    private browserFactory: Browser = new Browser(this)
-    private accounts: Account[]
-    private workers: Workers
-    private login = new Login(this)
-    private searchManager: SearchManager
+    private activeWorkers: number // 活跃的工作进程数
+    private exitedWorkers: number[] // 已退出的工作进程PID数组
+    private browserFactory: Browser = new Browser(this) // 浏览器工厂实例
+    private accounts: Account[] // 账户数组
+    private workers: Workers // 工作进程管理器
+    private login = new Login(this) // 登录管理器
+    private searchManager: SearchManager // 搜索管理器
 
-    public axios!: AxiosClient
+    public axios!: AxiosClient // HTTP客户端
 
     constructor() {
+        // 初始化用户数据
         this.userData = {
-            userName: '',
-            geoLocale: 'US',
-            langCode: 'en',
-            initialPoints: 0,
-            currentPoints: 0,
-            gainedPoints: 0
+            userName: '', // 用户名
+            geoLocale: 'US', // 地理区域
+            langCode: 'en', // 语言代码
+            initialPoints: 0, // 初始积分
+            currentPoints: 0, // 当前积分
+            gainedPoints: 0 // 已获得积分
         }
-        this.logger = new Logger(this)
-        this.accounts = []
-        this.cookies = { mobile: [], desktop: [] }
-        this.utils = new Utils()
-        this.workers = new Workers(this)
-        this.searchManager = new SearchManager(this)
+        this.logger = new Logger(this) // 初始化日志记录器
+        this.accounts = [] // 初始化账户数组
+        this.cookies = { mobile: [], desktop: [] } // 初始化cookies对象
+        this.utils = new Utils() // 初始化工具类
+        this.workers = new Workers(this) // 初始化工作进程管理器
+        this.searchManager = new SearchManager(this) // 初始化搜索管理器
         this.browser = {
-            func: new BrowserFunc(this),
-            utils: new BrowserUtils(this)
+            func: new BrowserFunc(this), // 初始化浏览器功能
+            utils: new BrowserUtils(this) // 初始化浏览器工具
         }
-        this.workers = new Workers(this)
-        this.humanizer = new Humanizer(this.utils, this.config.humanization)
-        this.activeWorkers = this.config.clusters
-        this.exitedWorkers = []
+        this.config = loadConfig() // 加载配置
+        this.activeWorkers = this.config.clusters // 设置活跃工作进程数
+        this.exitedWorkers = [] // 初始化已退出工作进程数组
     }
 
+    // 获取当前是否为移动端的上下文
     get isMobile(): boolean {
         return getCurrentContext().isMobile
     }
 
+    // 初始化账户数据
     async initialize(): Promise<void> {
         this.accounts = loadAccounts()
     }
 
+    // 运行主要的积分收集流程
     async run(): Promise<void> {
         const totalAccounts = this.accounts.length
         const runStartTime = Date.now()
@@ -138,22 +142,26 @@ export class MicrosoftRewardsBot {
         this.logger.info(
             'main',
             'RUN-START',
-            `Starting Microsoft Rewards Script | v${pkg.version} | Accounts: ${totalAccounts} | Clusters: ${this.config.clusters}`
+            `启动微软奖励脚本 | v${pkg.version} | 账户数: ${totalAccounts} | 集群数: ${this.config.clusters}`
         )
 
+        // 如果集群数大于1，则使用多进程模式
         if (this.config.clusters > 1) {
             if (cluster.isPrimary) {
+                // 主进程逻辑
                 this.runMaster(runStartTime)
             } else {
+                // 工作进程逻辑
                 this.runWorker(runStartTime)
             }
         } else {
+            // 单进程模式，直接运行任务
             await this.runTasks(this.accounts, runStartTime)
         }
     }
 
     private runMaster(runStartTime: number): void {
-        void this.logger.info('main', 'CLUSTER-PRIMARY', `Primary process started | PID: ${process.pid}`)
+        void this.logger.info('main', 'CLUSTER-PRIMARY', `主进程已启动 | PID: ${process.pid}`)
 
         const rawChunks = this.utils.chunkArray(this.accounts, this.config.clusters)
         const accountChunks = rawChunks.filter(c => c && c.length > 0)
@@ -200,7 +208,7 @@ export class MicrosoftRewardsBot {
             this.logger.warn(
                 'main',
                 `CLUSTER-WORKER-${label.toUpperCase()}`,
-                `Worker ${worker.process?.pid ?? '?'} ${label} | Code: ${code ?? 'n/a'} | Active workers: ${this.activeWorkers}`
+                `工作进程 ${worker.process?.pid ?? '?'} ${label} | 代码: ${code ?? 'n/a'} | 活跃工作进程: ${this.activeWorkers}`
             )
             if (this.activeWorkers <= 0) {
                 const totalCollectedPoints = allAccountStats.reduce((sum, s) => sum + s.collectedPoints, 0)
@@ -211,7 +219,7 @@ export class MicrosoftRewardsBot {
                 this.logger.info(
                     'main',
                     'RUN-END',
-                    `Completed all accounts | Accounts processed: ${allAccountStats.length} | Total points collected: +${totalCollectedPoints} | Old total: ${totalInitialPoints} → New total: ${totalFinalPoints} | Total runtime: ${totalDurationMinutes}min`,
+                    `已完成所有账户 | 已处理账户: ${allAccountStats.length} | 总收集积分: +${totalCollectedPoints} | 原始总计: ${totalInitialPoints} → 新总计: ${totalFinalPoints} | 总运行时间: ${totalDurationMinutes}分钟`,
                     'green'
                 )
                 await flushAllWebhooks()
@@ -228,12 +236,12 @@ export class MicrosoftRewardsBot {
     }
 
     private runWorker(runStartTimeFromMaster?: number): void {
-        void this.logger.info('main', 'CLUSTER-WORKER-START', `Worker spawned | PID: ${process.pid}`)
+        void this.logger.info('main', 'CLUSTER-WORKER-START', `工作进程已生成 | PID: ${process.pid}`)
         process.on('message', async ({ chunk, runStartTime }: { chunk: Account[]; runStartTime: number }) => {
             void this.logger.info(
                 'main',
                 'CLUSTER-WORKER-TASK',
-                `Worker ${process.pid} received ${chunk.length} accounts.`
+                `工作进程 ${process.pid} 接收到 ${chunk.length} 个账户。`
             )
             try {
                 const stats = await this.runTasks(chunk, runStartTime ?? runStartTimeFromMaster ?? Date.now())
@@ -246,7 +254,7 @@ export class MicrosoftRewardsBot {
                 this.logger.error(
                     'main',
                     'CLUSTER-WORKER-ERROR',
-                    `Worker task crash: ${error instanceof Error ? error.message : String(error)}`
+                    `工作进程任务崩溃: ${error instanceof Error ? error.message : String(error)}`
                 )
                 await flushAllWebhooks()
                 process.exit(1)
@@ -266,7 +274,7 @@ export class MicrosoftRewardsBot {
                 this.logger.info(
                     'main',
                     'ACCOUNT-START',
-                    `Starting account: ${accountEmail} | geoLocale: ${account.geoLocale}`
+                    `开始处理账户: ${accountEmail} | 地理位置: ${account.geoLocale}`
                 )
 
                 this.axios = new AxiosClient(account.proxy)
@@ -277,7 +285,7 @@ export class MicrosoftRewardsBot {
                     void this.logger.error(
                         true,
                         'FLOW',
-                        `Mobile flow failed for ${accountEmail}: ${error instanceof Error ? error.message : String(error)}`
+                        `${accountEmail} 的移动流程失败: ${error instanceof Error ? error.message : String(error)}`
                     )
                     return undefined
                 })
@@ -301,7 +309,7 @@ export class MicrosoftRewardsBot {
                     this.logger.info(
                         'main',
                         'ACCOUNT-END',
-                        `Completed account: ${accountEmail} | Total: +${collectedPoints} | Old: ${accountInitialPoints} → New: ${accountFinalPoints} | Duration: ${durationSeconds}s`,
+                        `已完成账户: ${accountEmail} | 总计: +${collectedPoints} | 原始: ${accountInitialPoints} → 新值: ${accountFinalPoints} | 持续时间: ${durationSeconds}秒`,
                         'green'
                     )
                 } else {
@@ -312,7 +320,7 @@ export class MicrosoftRewardsBot {
                         collectedPoints: 0,
                         duration: parseFloat(durationSeconds),
                         success: false,
-                        error: 'Flow failed'
+                        error: '流程失败'
                     })
                 }
             } catch (error) {
@@ -344,7 +352,7 @@ export class MicrosoftRewardsBot {
             this.logger.info(
                 'main',
                 'RUN-END',
-                `Completed all accounts | Accounts processed: ${accountStats.length} | Total points collected: +${totalCollectedPoints} | Old total: ${totalInitialPoints} → New total: ${totalFinalPoints} | Total runtime: ${totalDurationMinutes}min`,
+                `已完成所有账户 | 已处理账户: ${accountStats.length} | 总收集积分: +${totalCollectedPoints} | 原始总计: ${totalInitialPoints} → 新总计: ${totalFinalPoints} | 总运行时间: ${totalDurationMinutes}分钟`,
                 'green'
             )
 
@@ -357,7 +365,7 @@ export class MicrosoftRewardsBot {
 
     async Main(account: Account): Promise<{ initialPoints: number; collectedPoints: number }> {
         const accountEmail = account.email
-        this.logger.info('main', 'FLOW', `Starting session for ${accountEmail}`)
+        this.logger.info('main', 'FLOW', `开始为 ${accountEmail} 创建会话`)
 
         let mobileSession: BrowserSession | null = null
         let mobileContextClosed = false
@@ -368,7 +376,7 @@ export class MicrosoftRewardsBot {
                 const initialContext: BrowserContext = mobileSession.context
                 this.mainMobilePage = await initialContext.newPage()
 
-                this.logger.info('main', 'BROWSER', `Mobile Browser started | ${accountEmail}`)
+                this.logger.info('main', 'BROWSER', `移动浏览器已启动 | ${accountEmail}`)
 
                 await this.login.login(this.mainMobilePage, account)
 
@@ -378,7 +386,7 @@ export class MicrosoftRewardsBot {
                     this.logger.error(
                         'main',
                         'FLOW',
-                        `Failed to get mobile access token: ${error instanceof Error ? error.message : String(error)}`
+                        `获取移动访问令牌失败: ${error instanceof Error ? error.message : String(error)}`
                     )
                 }
 
@@ -388,14 +396,14 @@ export class MicrosoftRewardsBot {
                 const data: DashboardData = await this.browser.func.getDashboardData()
                 const appData: AppDashboardData = await this.browser.func.getAppDashboardData()
 
-                // Set geo
+                // 设置地理位置
                 this.userData.geoLocale =
                     account.geoLocale === 'auto' ? data.userProfile.attributes.country : account.geoLocale.toLowerCase()
                 if (this.userData.geoLocale.length > 2) {
                     this.logger.warn(
                         'main',
                         'GEO-LOCALE',
-                        `The provided geoLocale is longer than 2 (${this.userData.geoLocale} | auto=${account.geoLocale === 'auto'}), this is likely invalid and can cause errors!`
+                        `提供的地理位置长度超过2位 (${this.userData.geoLocale} | 自动=${account.geoLocale === 'auto'})，这可能是无效的并导致错误！`
                     )
                 }
 
@@ -411,9 +419,9 @@ export class MicrosoftRewardsBot {
                 this.logger.info(
                     'main',
                     'POINTS',
-                    `Earnable today | Mobile: ${this.pointsCanCollect} | Browser: ${
+                    `今日可赚取 | 移动端: ${this.pointsCanCollect} | 浏览器: ${
                         browserEarnable.mobileSearchPoints
-                    } | App: ${appEarnable?.totalEarnablePoints ?? 0} | ${accountEmail} | locale: ${this.userData.geoLocale}`
+                    } | 应用: ${appEarnable?.totalEarnablePoints ?? 0} | ${accountEmail} | 区域设置: ${this.userData.geoLocale}`
                 )
 
                 if (this.config.workers.doAppPromotions) await this.workers.doAppPromotions(appData)
@@ -446,7 +454,7 @@ export class MicrosoftRewardsBot {
                 this.logger.info(
                     'main',
                     'FLOW',
-                    `Collected: +${collectedPoints} | Mobile: +${mobilePoints} | Desktop: +${desktopPoints} | ${accountEmail}`
+                    `已收集: +${collectedPoints} | 移动端: +${mobilePoints} | 桌面端: +${desktopPoints} | ${accountEmail}`
                 )
 
                 return {
@@ -469,7 +477,7 @@ export class MicrosoftRewardsBot {
 export { executionContext }
 
 async function main(): Promise<void> {
-    // Check before doing anything
+    // 在执行任何操作之前进行检查
     checkNodeVersion()
     const rewardsBot = new MicrosoftRewardsBot()
 
@@ -477,12 +485,12 @@ async function main(): Promise<void> {
         void flushAllWebhooks()
     })
     process.on('SIGINT', async () => {
-        rewardsBot.logger.warn('main', 'PROCESS', 'SIGINT received, flushing and exiting...')
+        rewardsBot.logger.warn('main', 'PROCESS', '收到 SIGINT 信号，正在刷新并退出...')
         await flushAllWebhooks()
         process.exit(130)
     })
     process.on('SIGTERM', async () => {
-        rewardsBot.logger.warn('main', 'PROCESS', 'SIGTERM received, flushing and exiting...')
+        rewardsBot.logger.warn('main', 'PROCESS', '收到 SIGTERM 信号，正在刷新并退出...')
         await flushAllWebhooks()
         process.exit(143)
     })
@@ -503,35 +511,6 @@ async function main(): Promise<void> {
     } catch (error) {
         rewardsBot.logger.error('main', 'MAIN-ERROR', error as Error)
     }
-
-    const gracefulExit = (code: number) => {
-        if (config?.crashRecovery?.autoRestart && code !== 0) {
-            const max = config.crashRecovery.maxRestarts ?? 2
-            if (crashState.restarts < max) {
-                const backoff = (config.crashRecovery.backoffBaseMs ?? 2000) * (crashState.restarts + 1)
-                log('main','CRASH-RECOVERY',`计划在 ${backoff}ms 后重启 (尝试 ${crashState.restarts + 1}/${max})`, 'warn','yellow')
-                setTimeout(() => {
-                    crashState.restarts++
-                    bootstrap()
-                }, backoff)
-                return
-            }
-        }
-        process.exit(code)
-    }
-
-    const bootstrap = async () => {
-        try {
-            await rewardsBot.initialize()
-            await rewardsBot.run()
-        } catch (e) {
-            log('main','MAIN-ERROR','运行期间致命错误: ' + (e instanceof Error ? e.message : e),'error')
-            gracefulExit(1)
-        }
-    }
-
-    attachHandlers()
-    await bootstrap()
 }
 
 main().catch(async error => {

@@ -53,7 +53,7 @@ export default class BrowserUtils {
                                 this.bot.logger.debug(
                                     this.bot.isMobile,
                                     'DISMISS-ALL-MESSAGES',
-                                    `Dismissed: ${b.label}`
+                                    `已关闭: ${b.label}`
                                 )
                             }
                         }
@@ -62,19 +62,19 @@ export default class BrowserUtils {
                 await this.bot.utils.wait(300)
             }
 
-            // Overlay
+            // 覆盖层
             const overlay = await page.$('#bnp_overlay_wrapper')
             if (overlay) {
                 const rejected = await this.ghostClick(page, '#bnp_btn_reject, button[aria-label*="Reject" i]')
                 if (rejected) {
-                    this.bot.logger.debug(this.bot.isMobile, 'DISMISS-ALL-MESSAGES', 'Dismissed: Bing Overlay Reject')
+                    this.bot.logger.debug(this.bot.isMobile, 'DISMISS-ALL-MESSAGES', '已关闭: Bing覆盖层拒绝')
                 } else {
                     const accepted = await this.ghostClick(page, '#bnp_btn_accept')
                     if (accepted) {
                         this.bot.logger.debug(
                             this.bot.isMobile,
                             'DISMISS-ALL-MESSAGES',
-                            'Dismissed: Bing Overlay Accept'
+                            '已关闭: Bing覆盖层接受'
                         )
                     }
                 }
@@ -84,7 +84,7 @@ export default class BrowserUtils {
             this.bot.logger.warn(
                 this.bot.isMobile,
                 'DISMISS-ALL-MESSAGES',
-                `Handler error: ${error instanceof Error ? error.message : String(error)}`
+                `处理程序错误: ${error instanceof Error ? error.message : String(error)}`
             )
         }
     }
@@ -96,7 +96,7 @@ export default class BrowserUtils {
 
             const newTab = pages[pages.length - 1]
             if (!newTab) {
-                throw this.bot.logger.error(this.bot.isMobile, 'GET-NEW-TAB', 'No tabs could be found!')
+                throw this.bot.logger.error(this.bot.isMobile, 'GET-NEW-TAB', '未找到标签页!')
             }
 
             return newTab
@@ -104,7 +104,7 @@ export default class BrowserUtils {
             this.bot.logger.error(
                 this.bot.isMobile,
                 'GET-NEW-TAB',
-                `Unable to get latest tab: ${error instanceof Error ? error.message : String(error)}`
+                `无法获取最新标签页: ${error instanceof Error ? error.message : String(error)}`
             )
             throw error
         }
@@ -116,7 +116,7 @@ export default class BrowserUtils {
             const $ = load(html)
 
             if ($('body.neterror').length) {
-                this.bot.logger.info(this.bot.isMobile, 'RELOAD-BAD-PAGE', 'Bad page detected, reloading!')
+                this.bot.logger.info(this.bot.isMobile, 'RELOAD-BAD-PAGE', '检测到坏页面，正在重新加载!')
                 try {
                     await page.reload({ waitUntil: 'load' })
                 } catch {
@@ -130,7 +130,7 @@ export default class BrowserUtils {
             this.bot.logger.error(
                 this.bot.isMobile,
                 'RELOAD-BAD-PAGE',
-                `Reload check failed: ${error instanceof Error ? error.message : String(error)}`
+                `重新加载检查失败: ${error instanceof Error ? error.message : String(error)}`
             )
             return true
         }
@@ -144,16 +144,16 @@ export default class BrowserUtils {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'SEARCH-CLOSE-TABS',
-                `Found ${tabs.length} tab(s) open (min: ${config.minTabs}, max: ${config.maxTabs})`
+                `发现 ${tabs.length} 个标签页打开 (最小: ${config.minTabs}, 最大: ${config.maxTabs})`
             )
 
-            // Check if valid
+            // 检查是否有效
             if (config.minTabs < 1 || config.maxTabs < config.minTabs) {
-                this.bot.logger.warn(this.bot.isMobile, 'SEARCH-CLOSE-TABS', 'Invalid config, using defaults')
+                this.bot.logger.warn(this.bot.isMobile, 'SEARCH-CLOSE-TABS', '配置无效，使用默认值')
                 config = { minTabs: 1, maxTabs: 1 }
             }
 
-            // Close if more than max config
+            // 如果超过最大配置则关闭
             if (tabs.length > config.maxTabs) {
                 const tabsToClose = tabs.slice(config.maxTabs)
 
@@ -163,16 +163,16 @@ export default class BrowserUtils {
                 this.bot.logger.debug(
                     this.bot.isMobile,
                     'SEARCH-CLOSE-TABS',
-                    `Closed ${closedCount}/${tabsToClose.length} excess tab(s) to reach max of ${config.maxTabs}`
+                    `关闭了 ${closedCount}/${tabsToClose.length} 个多余的标签页以达到最大值 ${config.maxTabs}`
                 )
 
-                // Open more tabs
+                // 打开更多标签页
             } else if (tabs.length < config.minTabs) {
                 const tabsNeeded = config.minTabs - tabs.length
                 this.bot.logger.debug(
                     this.bot.isMobile,
                     'SEARCH-CLOSE-TABS',
-                    `Opening ${tabsNeeded} tab(s) to reach min of ${config.minTabs}`
+                    `打开 ${tabsNeeded} 个标签页以达到最小值 ${config.minTabs}`
                 )
 
                 const newTabPromises = Array.from({ length: tabsNeeded }, async () => {
@@ -184,7 +184,7 @@ export default class BrowserUtils {
                         this.bot.logger.warn(
                             this.bot.isMobile,
                             'SEARCH-CLOSE-TABS',
-                            `Failed to create new tab: ${error instanceof Error ? error.message : String(error)}`
+                            `创建新标签页失败: ${error instanceof Error ? error.message : String(error)}`
                         )
                         return null
                     }
@@ -199,7 +199,7 @@ export default class BrowserUtils {
             this.bot.logger.error(
                 this.bot.isMobile,
                 'SEARCH-CLOSE-TABS',
-                `Error: ${error instanceof Error ? error.message : String(error)}`
+                `错误: ${error instanceof Error ? error.message : String(error)}`
             )
             return page
         }
@@ -216,10 +216,10 @@ export default class BrowserUtils {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'GHOST-CLICK',
-                `Trying to click selector: ${selector}, options: ${JSON.stringify(options)}`
+                `尝试点击选择器: ${selector}, 选项: ${JSON.stringify(options)}`
             )
 
-            // Wait for selector to exist before clicking
+            // 点击前等待选择器存在
             await page.waitForSelector(selector, { timeout: 1000 }).catch(() => {})
 
             const cursor = createCursor(page as any)
@@ -230,7 +230,7 @@ export default class BrowserUtils {
             this.bot.logger.warn(
                 this.bot.isMobile,
                 'GHOST-CLICK',
-                `Failed for ${selector}: ${error instanceof Error ? error.message : String(error)}`
+                `${selector} 点击失败: ${error instanceof Error ? error.message : String(error)}`
             )
             return false
         }
@@ -250,7 +250,7 @@ export default class BrowserUtils {
                 this.bot.logger.debug(
                     this.bot.isMobile,
                     'DISABLE-FIDO',
-                    `Modified request body: isFidoSupported set to ${body.isFidoSupported}`
+                    `修改了请求体: isFidoSupported 设置为 ${body.isFidoSupported}`
                 )
 
                 route.continue({
@@ -264,7 +264,7 @@ export default class BrowserUtils {
                 this.bot.logger.debug(
                     this.bot.isMobile,
                     'DISABLE-FIDO',
-                    `An error occurred: ${error instanceof Error ? error.message : String(error)}`
+                    `发生错误: ${error instanceof Error ? error.message : String(error)}`
                 )
                 route.continue()
             }
