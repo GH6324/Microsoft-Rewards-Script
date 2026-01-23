@@ -569,7 +569,7 @@ export class Search extends Workers {
             }
 
             // 停留一段时间让页面加载并完成"访问"
-            await this.bot.utils.waitRandom(10000, 30000)
+            await this.bot.utils.waitRandom(20000, 30000)
 
             if (isMobile) {
                 // 移动端：返回搜索页面
