@@ -17,7 +17,7 @@ if %ERRORLEVEL% neq 0 (
     
     :: 下载Node.js安装程序
     echo 正在下载Node.js安装程序...
-    powershell -Command "(New-Object System.Net.WebClient).DownloadFile('https://nodejs.org/dist/v22.16.0/node-v22.16.0-x64.msi', 'node-installer.msi')"
+    powershell -Command "(New-Object System.Net.WebClient).DownloadFile('https://npmmirror.com/mirrors/node/v24.13.0/node-v24.13.0-x64.msi', 'node-installer.msi')"
     
     :: 安装Node.js
     echo 正在安装Node.js...
@@ -70,8 +70,7 @@ if %ERRORLEVEL% neq 0 (
 
 :: 安装Playwright
 echo 正在安装Playwright...
-call npm exec playwright install chromium
-call npm exec playwright install msedge
+call npx patchright install chromium
 if %ERRORLEVEL% neq 0 (
     echo 安装Playwright失败，请检查网络连接或手动安装。
     pause
@@ -89,6 +88,14 @@ if not exist "src\accounts.json" (
     )
 ) else (
     echo accounts.json文件已存在。
+)
+:: 预构建项目
+echo 正在预构建项目...
+call npm run pre-build
+if %ERRORLEVEL% neq 0 (
+    echo 预构建项目失败，请检查错误信息。
+    pause
+    exit /b 1
 )
 
 :: 构建项目

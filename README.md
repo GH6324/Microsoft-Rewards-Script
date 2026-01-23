@@ -10,6 +10,7 @@
 # 同步原项目时间
 2026-01-23 10:20:44
 
+
 # window环境 #
 ## 如何自动设置 ##
 1. 下载或克隆源代码
@@ -21,11 +22,13 @@
 1. 下载或克隆源代码
 2. 下载安装nodejs和npm环境
 3. 运行 `npm install` 安装依赖包
-4. 若Error: browserType.launch: Executable doesn't exist报错执行 npm exec playwright install msedge
+4. 若Error: browserType.launch: Executable doesn't exist报错执行 npx patchright install chromium
 5. 将 `accounts.example.json` 重命名为 `accounts.json`，并添加你的账户信息
 6. 按照你的喜好修改 `config.json` 文件
-7. 运行 `npm run build` 构建脚本
-8. 运行 `npm start` 启动构建好的脚本
+7. 运行 `npm run pre-build` 预构建脚本
+8. 运行 `npm run build` 构建脚本
+9. 运行 `npm start` 启动构建好的脚本
+
 
 # Docker环境 #
 1. 下载或克隆源代码
@@ -38,12 +41,13 @@
 ~~~
 docker compose up -d 
 ~~~
+
 ## 注意事项 ##
-- 如果你在未先关闭浏览器窗口的情况下结束脚本（仅在 `headless` 为 `false` 时），会有 Chrome 进程继续占用资源。你可以使用任务管理器关闭这些进程，或者使用附带的 `npm kill-chrome-win` 脚本（Windows 系统）。
-- 如果你要自动化运行此脚本，请设置每天至少运行 2 次，以确保完成所有任务。将 `"runOnZeroPoints": false`，这样在没有可赚取积分时脚本不会运行。
 - 如果出现无法自动登录情况，请在代码执行登录过程中手动完成网页的登录，等待代码自动完成剩下流程。登录信息保存在sessions目录（需要多备份），后续运行根据该目录的会话文件来运行。
-- 更新代码后，若出现错误，请先更新依赖包，`npm install`和`npm exec playwright install`
-- 若出现其他错误，请检查代码是否有语法错误，或联系作者。
+- 复制或重命名 `src/accounts.example.json` 为 `src/accounts.json` 并添加您的凭据
+- 复制或重命名 `src/config.example.json` 为 `src/config.json` 并自定义您的偏好。
+- 不要跳过此步骤。之前的 accounts.json 和 config.json 版本与当前版本不兼容。
+- 您必须在对 accounts.json 和 config.json 进行任何更改后重新构建脚本。
 
 ## 配置参考
 
@@ -168,6 +172,7 @@ docker compose up -d
 5. 添加了日志本地保存功能-2025年7月26日
 6. 由于pnpm依赖导致无法编译问题，项目暂时改回使用npm管理-2025年11月11日
 7. 补充docker的运行方式-2025年11月11日
+8. 2026-01-23 10:20:44同步原作者代码
 
 ## ⚠️ 免责声明
 
