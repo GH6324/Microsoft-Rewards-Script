@@ -36,7 +36,9 @@ class Browser {
         '--disable-user-media-security=true', // 禁用用户媒体安全
         '--disable-blink-features=Attestation', // 禁用Blink特性认证
         '--disable-features=WebAuthentication,PasswordManagerOnboarding,PasswordManager,EnablePasswordsAccountStorage,Passkeys', // 禁用特定功能
-        '--disable-save-password-bubble' // 禁用保存密码提示
+        '--disable-save-password-bubble', // 禁用保存密码提示
+        '--lang=zh-CN'
+
     ] as const
 
     constructor(bot: MicrosoftRewardsBot) {
@@ -142,7 +144,8 @@ class Browser {
         const fingerPrintData = new FingerprintGenerator().getFingerprint({
             devices: isMobile ? ['mobile'] : ['desktop'], // 根据是否为移动端选择设备类型
             operatingSystems: isMobile ? ['android', 'ios'] : ['windows', 'linux'], // 根据是否为移动端选择操作系统
-            browsers: [{ name: 'edge' }] // 使用Edge浏览器
+            browsers: [{ name: 'edge' }], // 使用Edge浏览器
+            locales: ['zh-CN']
         })
 
         // 更新用户代理
