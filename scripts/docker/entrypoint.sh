@@ -35,7 +35,15 @@ fi
 # 设置 cron 任务
 if [ -f "/etc/cron.d/microsoft-rewards-cron.template" ]; then
     # 替换模板中的占位符
-    sed -i "s|SCRIPT_PATH|/usr/src/microsoft-rewards-script/src/run_daily.sh|g" /etc/cron.d/microsoft-rewards-cron.template
+    CRON_SCHEDULE_ESCAPED=$(echo "$CRON_SCHEDULE" | sed 's/\*/\\*/g')
+    echo "DEBUG: CRON_SCHEDULE_ESCAPED=$CRON_SCHEDULE_ESCAPED"
+    echo "DEBUG: TZ=$TZ"
+    echo "DEBUG: Before sed - template content:"
+    cat /etc/cron.d/microsoft-rewards-cron.template
+    sed -i "s|\${CRON_SCHEDULE}|$CRON_SCHEDULE_ESCAPED|g" /etc/cron.d/microsoft-rewards-cron.template || true
+    sed -i "s|\${TZ}|$TZ|g" /etc/cron.d/microsoft-rewards-cron.template || true
+    echo "DEBUG: After sed - template content:"
+    cat /etc/cron.d/microsoft-rewards-cron.template
 
     # 启用 cron 任务
     cp /etc/cron.d/microsoft-rewards-cron.template /etc/cron.d/microsoft-rewards-cron

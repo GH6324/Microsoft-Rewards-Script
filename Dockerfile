@@ -1,7 +1,7 @@
 ###############################################################################
 # Stage 1: Builder
 ###############################################################################
-FROM node:24-slim AS builder
+FROM m.daocloud.io/docker.io/library/node:24-slim AS builder
 
 WORKDIR /usr/src/microsoft-rewards-script
 
@@ -29,7 +29,7 @@ RUN npx patchright install --with-deps --only-shell chromium \
 ###############################################################################
 # Stage 2: Runtime
 ###############################################################################
-FROM node:24-slim AS runtime
+FROM m.daocloud.io/docker.io/library/node:24-slim AS runtime
 
 WORKDIR /usr/src/microsoft-rewards-script
 
@@ -81,9 +81,11 @@ COPY --from=builder /usr/src/microsoft-rewards-script/node_modules ./node_module
 
 # Copy runtime scripts with proper permissions from the start
 COPY --chmod=755 scripts/docker/run_daily.sh ./scripts/docker/run_daily.sh
+COPY --chmod=755 scripts/docker/run_daily_cron.sh ./scripts/docker/run_daily_cron.sh
+COPY --chmod=755 scripts/docker/log-forwarder.sh ./scripts/docker/log-forwarder.sh
 COPY --chmod=644 src/crontab.template /etc/cron.d/microsoft-rewards-cron.template
-COPY --chmod=755 scripts/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
 
 # Entrypoint handles TZ, initial run toggle, cron templating & launch
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["sh", "-c", "echo 'Container started; cron is running.'"]
+CMD ["cron", "-f", "-l", "2"]
