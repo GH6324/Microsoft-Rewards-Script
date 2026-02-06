@@ -183,11 +183,6 @@ export class Logger {
             return true
         }
 
-        // 始终记录错误级别的日志，删除这些行可禁用此功能！
-        if (level === 'error') {
-            return true
-        }
-
         const { mode, levels, keywords, regexPatterns } = filter
 
         const hasLevelRule = Array.isArray(levels) && levels.length > 0

@@ -136,7 +136,7 @@ export class DailyCheckIn extends Workers {
                         'Bing/32.5.431027001 (com.microsoft.bing; build:431027001; iOS 17.6.1) Alamofire/5.10.2',
                     'Content-Type': 'application/json',
                     'X-Rewards-Country': this.bot.userData.geoLocale,
-                    'X-Rewards-Language': 'en',
+                    'X-Rewards-Language': 'zh-CN',
                     'X-Rewards-ismobile': 'true'
                 },
                 data: JSON.stringify(jsonData)

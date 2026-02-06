@@ -388,208 +388,56 @@ export class Search extends Workers {
 
         return await this.bot.browser.func.getSearchPoints()
     }
+  private async randomScroll(page: Page, isMobile: boolean) {
+        try {
+            const viewportHeight = await page.evaluate(() => window.innerHeight)
+            const totalHeight = await page.evaluate(() => document.body.scrollHeight)
+            const randomScrollPosition = Math.floor(Math.random() * (totalHeight - viewportHeight))
 
-    private async randomScroll(page: Page, isMobile: boolean) {
-        // 使用人性化滚动代替简单的随机滚动
-        await this.humanLikeScroll(page, isMobile);
-    }
+            this.bot.logger.debug(
+                isMobile,
+                'SEARCH-RANDOM-SCROLL',
+                `随机滚动 | 视口高度=${viewportHeight} | 总高度=${totalHeight} | 滚动位置=${randomScrollPosition}`
+            )
 
-    /**
-     * 模拟人类滚动行为，包含加速、减速和随机停顿
-     * @param page - 当前页面的Page对象
-     * @param isMobile - 是否为移动设备
-     */
-    private async humanLikeScroll(page: Page, isMobile: boolean) {
-        // 获取当前滚动位置和页面高度
-        const currentY = await page.evaluate(() => window.scrollY)
-        const maxScroll = await page.evaluate(() => document.body.scrollHeight) - await page.evaluate(() => window.innerHeight);
-
-        // 根据设备类型设置滚动参数
-        let scrollParams;
-        if (isMobile) {
-            // 移动设备参数：模拟触摸滑动
-            scrollParams = {
-                minOffset: 200,
-                maxOffset: 500,
-                minDuration: 2000,
-                maxDuration: 4000,
-                minPause: 1000,
-                maxPause: 3000,
-                segments: 1 // 单次滚动
-            };
-        } else {
-            // 电脑设备参数：模拟鼠标滚轮分段滚动
-            scrollParams = {
-                minOffset: 50,
-                maxOffset: 150,
-                minDuration: 500,
-                maxDuration: 1500,
-                minPause: 500,
-                maxPause: 1000,
-                segments: this.bot.utils.randomNumber(2, 4) // 2-4段滚动
-            };
+            await page.evaluate((scrollPos: number) => {
+                window.scrollTo({ left: 0, top: scrollPos, behavior: 'auto' })
+            }, randomScrollPosition)
+        } catch (error) {
+            this.bot.logger.error(
+                isMobile,
+                'SEARCH-RANDOM-SCROLL',
+                `随机滚动过程中出现错误 | message=${error instanceof Error ? error.message : String(error)}`
+            )
         }
-
-        // 计算滚动偏移量，第一次必定向下滚动
-        let offset;
-        if (this.firstScroll) {
-            // 第一次向下滚动
-            offset = this.bot.utils.randomNumber(scrollParams.minOffset, scrollParams.maxOffset);
-            this.firstScroll = false;
-        } else {
-            // 随机上下滚动
-            if (Math.random() < 0.7) { // 70%概率生成绝对值较大的数
-                if (Math.random() < 0.5) {
-                    offset = this.bot.utils.randomNumber(-scrollParams.maxOffset, -scrollParams.minOffset);
-                } else {
-                    offset = this.bot.utils.randomNumber(scrollParams.minOffset, scrollParams.maxOffset);
-                }
-            } else { // 30%概率生成中间区间的数
-                offset = this.bot.utils.randomNumber(-scrollParams.minOffset, scrollParams.minOffset);
-            }
-        }
-
-        // 计算目标位置，确保在有效范围内
-        // 根据设备类型执行不同的滚动策略
-        if (!isMobile && scrollParams.segments > 1) {
-            let remainingOffset = offset;
-            let currentPosition = currentY;
-
-            for (let i = 0; i < scrollParams.segments; i++) {
-                // 计算每段的偏移量，最后一段处理剩余部分
-                const segmentOffset = i < scrollParams.segments - 1
-                    ? Math.floor(remainingOffset / (scrollParams.segments - i))
-                    : remainingOffset;
-
-                const targetPosition = Math.max(0, Math.min(currentPosition + segmentOffset, maxScroll));
-                const duration = this.bot.utils.randomNumber(scrollParams.minDuration, scrollParams.maxDuration);
-                const startTime = Date.now();
-
-                await page.evaluate(({ currentPosition, targetPosition, duration, startTime }) => {
-                    return new Promise(resolve => {
-                        const animateScroll = () => {
-                            const elapsed = Date.now() - startTime;
-                            const progress = Math.min(elapsed / duration, 1);
-                            // 使用缓动函数模拟自然加速减速效果
-                            const easeProgress = 0.5 - 0.5 * Math.cos(progress * Math.PI);
-                            const position = currentPosition + easeProgress * (targetPosition - currentPosition);
-
-                            window.scrollTo(0, position);
-
-                            if (progress < 1) {
-                                requestAnimationFrame(animateScroll);
-                            } else {
-                                resolve(null);
-                            }
-                        };
-
-                        animateScroll();
-                    });
-                }, { currentPosition, targetPosition, duration, startTime });
-
-                // 更新当前位置和剩余偏移量
-                currentPosition = targetPosition;
-                remainingOffset -= segmentOffset;
-
-                // 段间停顿（最后一段后不停顿）
-                if (i < scrollParams.segments - 1) {
-                    await this.bot.utils.waitRandom(scrollParams.minPause, scrollParams.maxPause);
-                }
-            }
-        } else {
-            // 单次滚动（移动设备或电脑单段滚动）
-            const targetPosition = Math.max(0, Math.min(currentY + offset, maxScroll));
-            const duration = this.bot.utils.randomNumber(scrollParams.minDuration, scrollParams.maxDuration);
-            const startTime = Date.now();
-
-            await page.evaluate(({ currentY, targetPosition, duration, startTime }) => {
-                return new Promise(resolve => {
-                    const animateScroll = () => {
-                        const elapsed = Date.now() - startTime;
-                        const progress = Math.min(elapsed / duration, 1);
-                        // 使用缓动函数模拟自然加速减速效果
-                        const easeProgress = 0.5 - 0.5 * Math.cos(progress * Math.PI);
-                        const position = currentY + easeProgress * (targetPosition - currentY);
-
-                        window.scrollTo(0, position);
-
-                        if (progress < 1) {
-                            requestAnimationFrame(animateScroll);
-                        } else {
-                            resolve(null);
-                        }
-                    };
-
-                    animateScroll();
-                });
-            }, { currentY, targetPosition, duration, startTime });
-        }
-
-        // 最终停顿
-        await this.bot.utils.waitRandom(scrollParams.minPause, scrollParams.maxPause);
     }
 
     private async clickRandomLink(page: Page, isMobile: boolean) {
         try {
             this.bot.logger.debug(isMobile, 'SEARCH-RANDOM-CLICK', '尝试点击随机搜索结果链接')
 
-            // 获取搜索结果中的标题链接
-            const resultLinks = await page.locator('#b_results .b_algo h2').all();
-            // 筛选可见的链接
-            const visibleLinks = [];
-            for (const link of resultLinks) {
-                if (await link.isVisible()) {
-                    visibleLinks.push(link);
-                }
-            }
+            const searchPageUrl = page.url()
 
-            if (visibleLinks.length <= 0) {
-                this.bot.logger.debug(isMobile, 'SEARCH-BING', `没有可见的链接`);
-                return;
-            }
-
-            const randomLink = visibleLinks[this.bot.utils.randomNumber(0, visibleLinks.length - 1)];
-
-            // 模拟人类行为：悬停后点击，增加不确定性
-            if (randomLink) await randomLink.hover();
-            await this.bot.utils.waitRandom(1000, 2000);
-
-            // 取消悬停
-            if (randomLink) await page.mouse.move(0, 0);
-
-            // 30%几率只悬停不点击
-            const clickProbability = this.bot.utils.randomNumber(1, 100);
-            if (clickProbability <= 30) {
-                this.bot.logger.debug(isMobile, 'SEARCH-BING', `执行只悬停操作并返回 (概率: ${clickProbability}%)`);
-                return;
-            }
-
-            if (randomLink) {
-                await randomLink.click({ timeout: 2000 }).catch(() => { });
-            }
-
-            // 停留一段时间让页面加载并完成"访问"
-            await this.bot.utils.waitRandom(20000, 30000)
+            await this.bot.browser.utils.ghostClick(page, '#b_results .b_algo h2')
+            await this.bot.utils.wait(this.bot.config.searchSettings.searchResultVisitTime)
 
             if (isMobile) {
-                // 移动端：返回搜索页面
-                await page.goto(this.searchPageURL || this.bingHome)
-                this.bot.logger.debug(isMobile, 'SEARCH-RANDOM-CLICK', '返回搜索页面')
+                await page.goto(searchPageUrl)
+                this.bot.logger.debug(isMobile, 'SEARCH-RANDOM-CLICK', '已返回搜索页面')
             } else {
-                // 桌面端：处理新标签页
                 const newTab = await this.bot.browser.utils.getLatestTab(page)
                 const newTabUrl = newTab.url()
 
-                this.bot.logger.debug(isMobile, 'SEARCH-RANDOM-CLICK', `访问结果标签页 | url=${newTabUrl}`)
+                this.bot.logger.debug(isMobile, 'SEARCH-RANDOM-CLICK', `已访问结果标签页 | url=${newTabUrl}`)
 
                 await this.bot.browser.utils.closeTabs(newTab)
-                this.bot.logger.debug(isMobile, 'SEARCH-RANDOM-CLICK', '关闭结果标签页')
+                this.bot.logger.debug(isMobile, 'SEARCH-RANDOM-CLICK', '已关闭结果标签页')
             }
         } catch (error) {
             this.bot.logger.error(
                 isMobile,
                 'SEARCH-RANDOM-CLICK',
-                `随机点击期间发生错误 | message=${error instanceof Error ? error.message : String(error)}`
+                `随机点击过程中出现错误 | message=${error instanceof Error ? error.message : String(error)}`
             )
         }
     }

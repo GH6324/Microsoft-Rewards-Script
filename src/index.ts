@@ -103,8 +103,8 @@ export class MicrosoftRewardsBot {
         // 初始化用户数据
         this.userData = {
             userName: '', // 用户名
-            geoLocale: 'US', // 地理区域
-            langCode: 'en', // 语言代码
+            geoLocale: 'CN', // 地理区域
+            langCode: 'zh', // 语言代码
             initialPoints: 0, // 初始积分
             currentPoints: 0, // 当前积分
             gainedPoints: 0 // 已获得积分

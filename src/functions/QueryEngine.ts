@@ -21,8 +21,8 @@ export class QueryCore {
             shuffle = false,
             sourceOrder = ['china', 'google', 'wikipedia', 'reddit', 'local'],
             related = true,
-            langCode = 'en',
-            geoLocale = 'US'
+            langCode = 'zh',
+            geoLocale = 'CN'
         } = options
 
         try {
@@ -259,7 +259,7 @@ export class QueryCore {
         return null
     }
 
-    async getBingSuggestions(query = '', langCode = 'en'): Promise<string[]> {
+    async getBingSuggestions(query = '', langCode = 'zh'): Promise<string[]> {
         try {
             const request: AxiosRequestConfig = {
                 url: `https://www.bingapis.com/api/v7/suggestions?q=${encodeURIComponent(
@@ -332,7 +332,7 @@ export class QueryCore {
         }
     }
 
-    async getBingTrendingTopics(langCode = 'en'): Promise<string[]> {
+    async getBingTrendingTopics(langCode = 'zh'): Promise<string[]> {
         try {
             const request: AxiosRequestConfig = {
                 url: `https://www.bing.com/api/v7/news/trendingtopics?appid=91B36E34F9D1B900E54E85A77CF11FB3BE5279E6&cc=xl&setlang=${langCode}`,
@@ -343,7 +343,7 @@ export class QueryCore {
                         'Bing/32.5.431027001 (com.microsoft.bing; build:431027001; iOS 17.6.1) Alamofire/5.10.2',
                     'Content-Type': 'application/json',
                     'X-Rewards-Country': this.bot.userData.geoLocale,
-                    'X-Rewards-Language': 'en',
+                    'X-Rewards-Language': 'zh-CN',
                     'X-Rewards-ismobile': 'true'
                 }
             }
@@ -375,7 +375,7 @@ export class QueryCore {
         }
     }
 
-    async getWikipediaTrending(langCode = 'en'): Promise<string[]> {
+    async getWikipediaTrending(langCode = 'zh'): Promise<string[]> {
         try {
             const date = new Date(Date.now() - 24 * 60 * 60 * 1000)
             const yyyy = date.getUTCFullYear()
