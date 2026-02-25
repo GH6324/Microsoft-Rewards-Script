@@ -20,7 +20,7 @@
 5. 运行 `npm start`或运行 `run.bat` 启动构建好的脚本
 ## 如何手动设置 ##
 1. 下载或克隆源代码
-2. 下载安装nodejs和npm环境
+2. 下载安装nodejs 24和npm环境
 3. 运行 `npm install` 安装依赖包
 4. 若Error: browserType.launch: Executable doesn't exist报错执行 npx patchright install chromium
 5. 将 `accounts.example.json` 重命名为 `accounts.json`，并添加你的账户信息
@@ -179,5 +179,4 @@ docker compose up -d
 **风险自负！** 使用自动化脚本时，您的 Microsoft Rewards 账户可能会被暂停或禁止。
 
 此脚本仅供教育目的。作者对 Microsoft 采取的任何账户操作不承担责任。
-
 
