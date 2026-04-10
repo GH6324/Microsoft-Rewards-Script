@@ -49,7 +49,7 @@ export class UrlReward extends Workers {
             const formData = new URLSearchParams({
                 id: offerId,
                 hash: promotion.hash,
-                timeZone: '60',
+                timeZone: '480',
                 activityAmount: '1',
                 dbs: '0',
                 form: '',
@@ -60,7 +60,7 @@ export class UrlReward extends Workers {
             this.bot.logger.debug(
                 this.bot.isMobile,
                 'URL-REWARD',
-                `准备好的UrlReward表单数据 | offerId=${offerId} | hash=${promotion.hash} | 时区=60 | 活动量=1`
+                `准备好的UrlReward表单数据 | offerId=${offerId} | hash=${promotion.hash} | 时区=480 | 活动量=1`
             )
 
             const request: AxiosRequestConfig = {

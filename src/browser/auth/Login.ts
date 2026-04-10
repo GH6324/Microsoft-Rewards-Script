@@ -657,7 +657,7 @@ export class Login {
                 this.bot.logger.debug(this.bot.isMobile, 'GET-REWARD-SESSION', `令牌获取循环 ${i + 1}/${loopMax}`)
 
                 const u = new URL(page.url())
-                const atRewardHome = u.hostname === 'rewards.bing.com' && u.pathname === '/'
+                const atRewardHome = u.hostname === 'rewards.bing.com' && u.pathname === '/dashboard'
 
                 if (atRewardHome) {
                     await this.bot.browser.utils.tryDismissAllMessages(page)
@@ -665,8 +665,8 @@ export class Login {
                     const html = await page.content()
                     const $ = await this.bot.browser.utils.loadInCheerio(html)
 
-                    // Check which version of the dashboard is being used, disable requestToken req on new dash
-                    const isModernDashboard = $('section#dailyset').length > 0 // Only on new UI and on dashboard/overview page
+                    // 检查当前使用的是哪个版本的仪表板，在新版仪表板上禁用 requestToken 请求
+                    const isModernDashboard = $('section#dailyset').length > 0 // 仅在新版 UI 和仪表板/概览页面上存在
 
                     if (isModernDashboard) {
                         this.bot.rewardsVersion = 'modern'
@@ -674,13 +674,13 @@ export class Login {
                         this.bot.logger.warn(
                             this.bot.isMobile,
                             'GET-REWARD-SESSION',
-                            'Modern Rewards dashboard detected. This script version may not fully support it.'
+                            '检测到现代 Rewards 仪表板。此脚本版本可能不完全支持。'
                         )
 
                         this.bot.logger.warn(
                             this.bot.isMobile,
                             'GET-REWARD-SESSION',
-                            'RequestToken disabled for this session (expected behavior).'
+                            '本次会话已禁用 RequestToken（预期行为）。'
                         )
                     }
 
