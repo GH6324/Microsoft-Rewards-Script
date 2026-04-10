@@ -83,6 +83,8 @@ export class MicrosoftRewardsBot {
 
     public userData: UserData // 用户数据
 
+    public rewardsVersion: 'legacy' | 'modern' = 'legacy'
+
     public accessToken = '' // 访问令牌
     public requestToken = '' // 请求令牌
     public cookies: { mobile: Cookie[]; desktop: Cookie[] } // 移动端和桌面端的cookies
